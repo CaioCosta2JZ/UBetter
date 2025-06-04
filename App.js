@@ -30,11 +30,24 @@ export default function App() {
            size={size}
            />
         )}} />
+         <Tab.Screen name="Login" component={Login} options={{tabBarIcon: ({color, size}) => (
+          <Ionicons name="person-outline"
+           color={color}
+           size={size}
+           />
+        )}} />
+        <Tab.Screen name="Cadastro" component={Cadastro} options={{tabBarIcon: ({color, size}) => (
+          <Ionicons name="person-outline"
+           color={color}
+           size={size}
+           />
+        )}} />
         <Tab.Screen name="NovaMeta" component={NovaMeta} options={{tabBarIcon: ({color, size}) => (
           <Ionicons name="add-outline"
            color={color}
            size={size}
            />
+          
         )}} />
       </Tab.Navigator>
     </NavigationContainer>  
