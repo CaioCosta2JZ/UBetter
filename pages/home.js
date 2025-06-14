@@ -2,9 +2,16 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function Home() {
-    return (
+  return (
+    <View style={styles.container}>
         <View>
-            <Text>Home</Text>
+          <Text style={styles.titulo}>Home</Text>
         </View>
-    );
+    </View>
+
+  )
 }
+
+const styles = StyleSheet.create({
+  
+});
