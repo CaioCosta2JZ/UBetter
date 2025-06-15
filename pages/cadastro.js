@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
         flex: 1,
         height: "100%",
         backgroundColor: '#101010',
-
+        
     },
     logo: {
         width: '50%',

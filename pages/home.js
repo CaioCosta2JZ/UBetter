@@ -25,12 +25,13 @@ export default function Home() {
         colors={['#005B28', '#182F22', '#212121']}
         style={{ display: "flex",
               justifyContent: "space-between",
-              height: "25%",
+              height: 200,
               shadowColor: '#000',
               alignItems: "center",
               padding: 25,
               borderRadius: 16,
-              color: "#666666"}}
+              color: "#666666",
+              marginHorizontal: 20,}}
               start={{ x: 0.0, 
                       y: 0.0,
                       }}
@@ -119,7 +120,8 @@ const styles = StyleSheet.create({
   containerHome: {
     flex: 1,
     backgroundColor: '#101010',
-    padding: 20
+    marginTop: 0,
+    marginVertical: 35,
   },
   inicio: {
     color: "white",
@@ -137,6 +139,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
     paddingBottom: 20,
   },
+  
   tarefasAtuais: {
     color: "white",
     fontSize: 20,
@@ -145,6 +148,8 @@ const styles = StyleSheet.create({
 
   tituloCard: {
     color: "white",
+    fontWeight: "bold",
+    fontSize: 20,
     alignItems: "center",
   },
 
@@ -164,12 +169,15 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     gap: 10,
+    marginHorizontal: 20,
+    paddingRight: 10,
   },
     tarefas2: {
     paddingTop: 10,
     flex: 1,
     flexDirection: 'column  ',
     gap: 10,
+    marginHorizontal: 20,
   },
 
   card: {
@@ -179,7 +187,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     width: '50%',
     shadowColor: '#000',
-    fontFamily: 'poppins',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.85,
