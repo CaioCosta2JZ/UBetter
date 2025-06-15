@@ -9,6 +9,7 @@ import Estatisticas from './estatisticas';
 import PerfilScreen from './perfilScreen';
 import TelaLogin from './login';
 import TelaCadastro from './cadastro';
+import InfoPessoais from './infopessoais';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -88,8 +89,11 @@ export default function Routes() {
       <Stack.Screen
         name="App"
         component={TabApp}
-      
       />
+      <Stack.Screen
+        name="InfoPessoais"
+        component={InfoPessoais}
+        />
     </Stack.Navigator>
   );
 }

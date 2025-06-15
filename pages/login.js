@@ -17,11 +17,11 @@ const TelaLogin = ({ navigation }) => {
 
                 <View style={styles.formulario}>
                     <Text style={styles.coisa}>Email</Text>
-                    <TextInput style={styles.input} keyboardType="text" value={email}
+                    <TextInput style={styles.input} placeholder="Email" keyboardType="text" value={email}
                         onChangeText={setEmail} />
 
                     <Text style={styles.coisa}>Senha</Text>
-                    <TextInput style={styles.input} value={senha}
+                    <TextInput style={styles.input} placeholder="Senha"value={senha}
                         onChangeText={setSenha} secureTextEntry />
 
                     <TouchableOpacity style={styles.botao}>
@@ -43,6 +43,7 @@ const TelaLogin = ({ navigation }) => {
 }
 const styles = StyleSheet.create({
     container: {
+        fontFamily: 'poppins',
         flex: 1,
         height: "100%",
         backgroundColor: '#101010',
@@ -56,6 +57,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     coisa: {
+        fontFamily: 'poppins',
         fontSize: 16,
         color: 'white',
         textAlign: "left"
@@ -66,6 +68,7 @@ const styles = StyleSheet.create({
         textAlign: "center"
     },
     titulo: {
+        fontFamily: 'poppins',
         fontSize: 30,
         color: 'white',
 
@@ -83,9 +86,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 5,
         placeholderTextColor: '#1E1C1C',
         alignSelf: 'center',
-
+        fontFamily: 'poppins',
     },
     topo: {
+     
         flex: 1,
         width: 'auto',
         justifyContent: 'flex-start',
@@ -94,6 +98,7 @@ const styles = StyleSheet.create({
         paddingBottom: 60,
     },
     formulario: {
+        fontFamily: 'poppins',
         paddingTop: 50,
         padding: 10,
         width: '100%',
@@ -112,12 +117,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: "#053320",
         alignSelf: 'center',
+        fontFamily: 'poppins',
     },
      link: {
         marginTop: 20,
         textAlign: 'center',
         color: '#ddd',
         fontWeight: 700,
+     
     },
     textoBotao: {
         fontSize: 20,

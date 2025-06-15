@@ -35,7 +35,7 @@ const TelaCadastro = ({ navigation }) => {
                         onChangeText={setConfirmarSenha} secureTextEntry />
 
                     <TouchableOpacity style={styles.botao}>
-                        <Text style={styles.textoBotao}>Cadastrar</Text>
+                        <Text style={styles.textoBotao} onPress={() => navigation.navigate('InfoPessoais')} >Cadastrar</Text>
                     </TouchableOpacity>
                     <Text style={styles.coisa2}>Já tem uma conta? {' '}
                         <Text style={{ color: '#099747' }} onPress={() => navigation.navigate('Login')}>Logar.</Text>{' '}</Text>
@@ -56,6 +56,7 @@ const styles = StyleSheet.create({
         flex: 1,
         height: "100%",
         backgroundColor: '#101010',
+        fontFamily: 'poppins',
         
     },
     logo: {
@@ -69,12 +70,13 @@ const styles = StyleSheet.create({
         paddingBottom: 4,
         fontSize: 16,
         color: 'white',
-        textAlign: "left"
+        textAlign: "left",
+        fontFamily: 'poppins',
     },
     coisa2: {
         fontSize: 14,
         color: 'white',
-        textAlign: "center"
+        textAlign: "center",
     },
     link: {
         marginTop: 20,
@@ -86,6 +88,7 @@ const styles = StyleSheet.create({
         paddingTop: 20,
         fontSize: 30,
         color: 'white',
+        fontFamily: 'poppins',
     },
 
     input: {
@@ -100,7 +103,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 5,
         placeholderTextColor: '#1E1C1C',
         alignSelf: 'center',
-        
+        fontFamily: 'poppins',
     },
     topo: {
         flex: 1,
@@ -116,6 +119,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: "100%",
         justifyContent: 'flex-start',
+        fontFamily: 'poppins',
     },
 
         botao: {

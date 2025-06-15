@@ -141,6 +141,8 @@ const styles = StyleSheet.create({
   },
   
   tarefasAtuais: {
+    paddingLeft: 20,
+    
     color: "white",
     fontSize: 20,
     marginTop: 20,
@@ -151,18 +153,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 20,
     alignItems: "center",
+    fontFamily: 'poppins',
   },
 
   contagemDias: {
     color: "white",
     fontSize: 40,
     fontWeight: "bold",
+    fontFamily: 'poppins',
   },
 
   textoMotivacional: {
     alignSelf: "center",
     color: "#666666",
     fontSize: 12,
+    fontFamily: 'poppins',
   },
 
   tarefas: {
@@ -171,8 +176,10 @@ const styles = StyleSheet.create({
     gap: 10,
     marginHorizontal: 20,
     paddingRight: 10,
+    fontFamily: 'poppins',
   },
     tarefas2: {
+      fontFamily: 'poppins',
     paddingTop: 10,
     flex: 1,
     flexDirection: 'column  ',
