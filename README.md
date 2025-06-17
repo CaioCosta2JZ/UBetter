@@ -19,7 +19,7 @@ O aplicativo foi desenvolvido utilizando **React Native** e utiliza o **Firebase
 * [Arthur Maetiase](https://github.com/ArthurMaetiase) - Desenvolvedor Backend
 * [Caio Costa](https://github.com/CaioCosta2JZ) - Desenvolvedor Backend
 * [Carlos Henrique](https://github.com/CarlosMattei) - Designer e desenvolvedor Frontend
-* [Gabriela Prado](https://github.com/kevelinda) - Designer e desenvolvedora Frontend
+* [Gabriela Prado](https://github.com/Gabrielachp) - Designer e desenvolvedora Frontend
 
 ## 🚀 Instalação
 
