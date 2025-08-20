@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import Routes from './pages/routes';
+import Routes from '.src/pages/routes';
 
 
 
