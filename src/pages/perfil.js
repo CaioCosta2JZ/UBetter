@@ -18,7 +18,7 @@ const Perfil = () => {
           <View style={styles.achievementCard}>
             <Text style={styles.achievementTitle}>Água</Text>
             <Image
-              source={require('../assets/trofeu-dourado-isolado-em-fundo-transparente 1.png')}
+              source={require('../../assets/trofeu-dourado-isolado-em-fundo-transparente 1.png')}
               style={styles.trophyImage}
             />
             <Text style={styles.achievementDescription}>Completou a meta 10 vezes consecutivas</Text>
@@ -26,7 +26,7 @@ const Perfil = () => {
           <View style={styles.achievementCard}>
             <Text style={styles.achievementTitle}>Caminhada</Text>
             <Image
-              source={require('../assets/10603705_42828-removebg-preview 1.png')}
+              source={require('../../assets/10603705_42828-removebg-preview 1.png')}
               style={styles.medalImage}
             />
             <Text style={styles.achievementDescription}>Completou a meta 10 vezes consecutivas</Text>

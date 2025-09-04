@@ -6,7 +6,7 @@ const Configuracoes = () => {
     <View style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Configurações</Text>
-        <Image source={require('../assets/UBetter.png')} style={styles.logo} />
+        <Image source={require('../../assets/UBetter.png')} style={styles.logo} />
         <TouchableOpacity
           style={styles.logoutButton}
         >

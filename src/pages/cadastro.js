@@ -14,7 +14,7 @@ const TelaCadastro = ({ navigation }) => {
 
             <View style={styles.container}>
                 <View style={styles.topo}>
-                    <Image source={require('../assets/UBetter.png')} style={styles.logo} />
+                    <Image source={require('../../assets/UBetter.png')} style={styles.logo} />
                 </View>
 
                 <View style={styles.formulario}>
