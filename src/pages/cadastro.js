@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Text, TextInput, View, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { db } from "../config/firebase";
+import { ref, set, push } from "firebase/database";
 
 
 const TelaCadastro = ({ navigation }) => {
@@ -8,9 +10,34 @@ const TelaCadastro = ({ navigation }) => {
     const [senha, setSenha] = useState("");
     const [confirmarSenha, setConfirmarSenha] = useState("");
 
+    const salvarUsuario = () => {
+        if (nome.trim() === "" || email.trim() === "" || senha.trim() === "" || confirmarSenha.trim === "") {
+            Alert.alert("Erro", "Preencha todos os campos!");
+            return;
+        }
+    }
+
+    const usuariosRef = ref(db, "usuarios");
+    const novoUsuarioRef = push(usuariosRef);
+
+    set(novoUsuarioRef, {
+        nome: nome,
+        email: email,
+        criadoEm: new Date().toISOString()
+    })
+       .then(() => {
+        Alert.alert("Sucesso","Usuário cadastrado com sucesso");
+        setNome("");
+        setEmail("");
+        setSenha("");
+        setConfirmarSenha("");
+       })
+       .catch((error) => {
+        Alert.alert("Erro", error.message);
+       });
+
     return (
         <>
-
 
             <View style={styles.container}>
                 <View style={styles.topo}>
