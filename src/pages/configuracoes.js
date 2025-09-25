@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: '600',
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
     marginBottom: 10,
   },
   logo: {
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     alignItems: 'center',
   },
-  actionButtonText: { color: '#FFF', fontSize: 16, fontFamily: 'poppins' },
+  actionButtonText: { color: '#FFF', fontSize: 16, fontFamily: 'arial' },
   logoutButton: {
     width: '100%',
     backgroundColor: '#280202',
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     alignItems: 'center',
   },
-  logoutButtonText: { color: '#FF2D2D', fontSize: 16, fontFamily: 'poppins' },
+  logoutButtonText: { color: '#FF2D2D', fontSize: 16, fontFamily: 'arial' },
 });
 
 export default Configuracoes;

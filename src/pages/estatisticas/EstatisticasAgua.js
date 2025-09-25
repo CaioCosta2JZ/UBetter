@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     width: '100%',
     shadowColor: '#000',
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: '#FFF',
     fontSize: 18,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
     fontWeight: 'regular',
   },
   cardIcon: {
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     marginBottom: 20,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
   },
   valueText: {
     color: '#FFF',
@@ -192,14 +192,14 @@ const styles = StyleSheet.create({
   weeklyCardTitle: {
     color: '#FFF',
     fontSize: 20,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
   },
   weeklyTotalConsumption: {
     color: '#FFF',
     fontSize: 48,
     fontWeight: 'bold',
     marginBottom: 20,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
   },
   barChartContainer: {
     flexDirection: 'row',
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     fontSize: 12,
     marginTop: 5,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
   },
   dailyListContainer: {
     marginTop: 10,
@@ -239,13 +239,13 @@ const styles = StyleSheet.create({
   dailyListDay: {
     color: '#FFF',
     fontSize: 16,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
   },
   dailyListAmount: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
   },
 });
 

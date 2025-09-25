@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: '600',
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
     marginBottom: 10,
   },
   profileSection: { alignItems: 'center' },
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   profileName: {
     color: '#FFF',
     fontSize: 16,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
     fontWeight: 'bold',
     marginBottom: 10,
   },
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   editButtonText: {
     color: '#FFF',
     fontSize: 14,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
   },
   achievementsContainer: { flexDirection: 'row', justifyContent: 'space-between' },
   achievementCard: {
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   achievementTitle: {
     color: '#FFF',
     fontSize: 16,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
     fontWeight: 'bold',
     marginBottom: 5,
   },
@@ -122,14 +122,14 @@ const styles = StyleSheet.create({
   achievementDescription: {
     color: '#aaa',
     fontSize: 14,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
     textAlign: 'center',
   },
   personalInfoContainer: { marginTop: 10, width: '100%' },
   infoRow: { display: 'flex', width: '100%', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   infoLabel: {
     color: '#FFF',
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
     fontSize: 16,
     alignContent: 'center',
     fontWeight: 'bold',

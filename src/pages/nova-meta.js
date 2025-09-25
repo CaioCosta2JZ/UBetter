@@ -76,22 +76,22 @@ const novaMeta = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#101010', padding: 20 },
-  title: { color: '#FFF', fontFamily: 'poppins', fontSize: 24, textAlign: 'center', marginBottom: 20 },
+  title: { color: '#FFF', fontFamily: 'arial', fontSize: 24, textAlign: 'center', marginBottom: 20 },
   card: { backgroundColor: '#1C1C1E', borderRadius: 16, padding: 20 },
-  label: { color: '#FFF', fontSize: 16, marginBottom: 10, fontFamily: 'poppins' },
+  label: { color: '#FFF', fontSize: 16, marginBottom: 10, fontFamily: 'arial' },
   buttonContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
   categoryButton: { padding: 10, borderRadius: 8, backgroundColor: '#333', flex: 1, alignItems: 'center', marginHorizontal: 5 },
   activeButton: { backgroundColor: '#020202', },
-  buttonText: { color: '#fff', fontSize: 14, fontFamily: 'poppins',},
-  cancelButtonText: { color: '#FF2D2D', fontSize: 14, fontFamily: 'poppins', },
-  saveBbuttonText: { color: '#2DFF92', fontSize: 14, fontFamily: 'poppins', },
+  buttonText: { color: '#fff', fontSize: 14, fontFamily: 'arial',},
+  cancelButtonText: { color: '#FF2D2D', fontSize: 14, fontFamily: 'arial', },
+  saveBbuttonText: { color: '#2DFF92', fontSize: 14, fontFamily: 'arial', },
   input: { backgroundColor: '#101010', color: '#FFF', border: '1px solid #FFF', padding: 10, borderRadius: 8, marginBottom: 20 },
   periodContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
   periodButton: { padding: 10, borderRadius: 8, backgroundColor: '#333', flex: 1, alignItems: 'center', marginHorizontal: 5 },
   buttonGroup: { flexDirection: 'row', justifyContent: 'space-between' },
-  cancelButton: { backgroundColor: '#280202', fontFamily: 'poppins', padding: 10, borderRadius: 8, flex: 1, alignItems: 'center', marginRight: 5 },
-  saveButton: { backgroundColor: '#053320', fontFamily: 'poppins', padding: 10, borderRadius: 8, flex: 2, alignItems: 'center' },
-  subText: { color: '#888', fontSize: 12, fontFamily: 'poppins' },
+  cancelButton: { backgroundColor: '#280202', fontFamily: 'arial', padding: 10, borderRadius: 8, flex: 1, alignItems: 'center', marginRight: 5 },
+  saveButton: { backgroundColor: '#053320', fontFamily: 'arial', padding: 10, borderRadius: 8, flex: 2, alignItems: 'center' },
+  subText: { color: '#888', fontSize: 12, fontFamily: 'arial' },
 });
 
 export default novaMeta;

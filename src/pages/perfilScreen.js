@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   titleScreen: {
     color: '#FFF',
     textAlign: 'center',
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
     marginVertical: 20,
     fontSize: 24,
   },
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   activeButton: { backgroundColor: '#FFF' },
-  buttonText: { color: '#FFF', fontSize: 16, fontFamily: 'poppins' },
+  buttonText: { color: '#FFF', fontSize: 16, fontFamily: 'arial' },
   activeText: { color: '#000' },
   scrollContent: { flexGrow: 1, paddingBottom: 80 },
 });

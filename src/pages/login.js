@@ -43,7 +43,7 @@ const TelaLogin = ({ navigation }) => {
 }
 const styles = StyleSheet.create({
     container: {
-        fontFamily: 'poppins',
+        fontFamily: 'arial',
         flex: 1,
         height: "100%",
         backgroundColor: '#101010',
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     coisa: {
-        fontFamily: 'poppins',
+        fontFamily: 'arial',
         fontSize: 16,
         color: 'white',
         textAlign: "left"
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
         textAlign: "center"
     },
     titulo: {
-        fontFamily: 'poppins',
+        fontFamily: 'arial',
         fontSize: 30,
         color: 'white',
 
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 5,
         placeholderTextColor: '#1E1C1C',
         alignSelf: 'center',
-        fontFamily: 'poppins',
+        fontFamily: 'arial',
     },
     topo: {
      
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
         paddingBottom: 60,
     },
     formulario: {
-        fontFamily: 'poppins',
+        fontFamily: 'arial',
         paddingTop: 50,
         padding: 10,
         width: '100%',
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: "#053320",
         alignSelf: 'center',
-        fontFamily: 'poppins',
+        fontFamily: 'arial',
     },
      link: {
         marginTop: 20,

@@ -153,21 +153,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 20,
     alignItems: "center",
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
   },
 
   contagemDias: {
     color: "white",
     fontSize: 40,
     fontWeight: "bold",
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
   },
 
   textoMotivacional: {
     alignSelf: "center",
     color: "#666666",
     fontSize: 12,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
   },
 
   tarefas: {
@@ -176,10 +176,10 @@ const styles = StyleSheet.create({
     gap: 10,
     marginHorizontal: 20,
     paddingRight: 10,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
   },
     tarefas2: {
-      fontFamily: 'poppins',
+      fontFamily: 'arial',
     paddingTop: 10,
     flex: 1,
     flexDirection: 'column  ',
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     width: '100%',
     shadowColor: '#000',
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.85,
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: '#FFF',
     fontSize: 18,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
     fontWeight: 'regular',
   },
   cardAgua: {
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     marginBottom: 20,
-    fontFamily: 'poppins',
+    fontFamily: 'arial',
   },
   valueText: {
     color: '#FFF',

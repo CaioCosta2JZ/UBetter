@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
         flex: 1,
         height: "100%",
         backgroundColor: '#101010',
-        fontFamily: 'poppins',
+        fontFamily: 'Arial',
         
     },
     logo: {
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: 'white',
         textAlign: "left",
-        fontFamily: 'poppins',
+        fontFamily: 'Arial',
     },
     coisa2: {
         fontSize: 14,
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
         paddingTop: 20,
         fontSize: 30,
         color: 'white',
-        fontFamily: 'poppins',
+        fontFamily: 'Arial',
     },
 
     input: {
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 5,
         placeholderTextColor: '#1E1C1C',
         alignSelf: 'center',
-        fontFamily: 'poppins',
+        fontFamily: 'Arial',
     },
     topo: {
         flex: 1,
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: "100%",
         justifyContent: 'flex-start',
-        fontFamily: 'poppins',
+        fontFamily: 'Arial',
     },
 
         botao: {
