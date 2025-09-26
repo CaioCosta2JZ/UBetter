@@ -3,16 +3,33 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 
 import { Ionicons } from '@expo/vector-icons';
 
 const novaMeta = () => {
-  const [category, setCategory] = useState('Água');
+  const [category, setCategory] = useState('');
   const [value, setValue] = useState('');
-  const [period, setPeriod] = useState('Diária');
+  const [period, setPeriod] = useState('');
 
   const saveGoal = () => {
+    
     if (!value || value <= 0) {
       alert('Por favor, insira um valor maior que 0.');
       return;
     }
-    alert(`Meta salva: ${value} ${category === 'Água' ? 'L' : category === 'Caminhada' ? 'km' : 'h'} ${period}`);
+    else{
+     set(ref(db, "usuarios/" + user.uid), {
+              category: category,
+              value: value,
+              period: period
+            })
+              .then(() => {
+                alert(`Meta salva: ${value} ${category === 'Água' ? 'L' : category === 'Caminhada' ? 'km' : 'h'} ${period}`);
+                setCategory("");
+                setValue("");
+                setPeriod("");
+                navigation.navigate("home"); // ir para próxima tela
+              })
+              .catch((error) => {
+                Alert.alert("Erro ao salvar no banco", error.message);
+              });
+    }
   };
 
   return (

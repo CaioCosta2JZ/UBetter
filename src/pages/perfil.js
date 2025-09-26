@@ -1,52 +1,88 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { auth, db } from "../config/firebase";
+import { ref, onValue, update } from "firebase/database";
 
 const Perfil = () => {
+  const [usuario, setUsuario] = useState({
+    peso: "",
+    altura: "",
+    idade: "",
+  });
+
+  useEffect(() => {
+    const user = auth.currentUser; // usuário logado
+    if (user) {
+      const usuarioRef = ref(db, "usuarios/" + user.uid);
+
+      // Escuta em tempo real
+      onValue(usuarioRef, (snapshot) => {
+        if (snapshot.exists()) {
+          setUsuario(snapshot.val());
+        } else {
+          console.log("Nenhum dado encontrado para este usuário");
+        }
+      });
+    }
+  }, []);
+
+  const handleSalvar = () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const usuarioRef = ref(db, "usuarios/" + user.uid);
+    update(usuarioRef, {
+      peso: usuario.peso,
+      altura: usuario.altura,
+      idade: usuario.idade,
+    })
+      .then(() => Alert.alert("Sucesso", "Informações atualizadas!"))
+      .catch((err) => Alert.alert("Erro", err.message));
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Informações do Perfil</Text>
         <Image style={styles.profileImage} />
         <Text style={styles.profileName}>Nome do usuário</Text>
-        <TouchableOpacity style={styles.editButton} onPress={() => Alert.alert('Editar Perfil', 'Em desenvolvimento')}>
-          <Text style={styles.editButtonText}>Editar</Text>
+        <TouchableOpacity style={styles.editButton} onPress={handleSalvar}>
+          <Text style={styles.editButtonText}>Salvar</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Conquistas</Text>
-        <View style={styles.achievementsContainer}>
-          <View style={styles.achievementCard}>
-            <Text style={styles.achievementTitle}>Água</Text>
-            <Image
-              source={require('../../assets/trofeu-dourado-isolado-em-fundo-transparente 1.png')}
-              style={styles.trophyImage}
-            />
-            <Text style={styles.achievementDescription}>Completou a meta 10 vezes consecutivas</Text>
-          </View>
-          <View style={styles.achievementCard}>
-            <Text style={styles.achievementTitle}>Caminhada</Text>
-            <Image
-              source={require('../../assets/10603705_42828-removebg-preview 1.png')}
-              style={styles.medalImage}
-            />
-            <Text style={styles.achievementDescription}>Completou a meta 10 vezes consecutivas</Text>
-          </View>
-        </View>
-      </View>
+
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Informações Pessoais</Text>
         <View style={styles.personalInfoContainer}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Peso</Text>
-            <TextInput style={styles.infoInput} placeholder="Ex: 70 kg" placeholderTextColor="#666" />
+            <TextInput
+              style={styles.infoInput}
+              value={usuario.peso}
+              onChangeText={(text) => setUsuario({ ...usuario, peso: text })}
+              placeholder="Ex: 70 kg"
+              placeholderTextColor="#666"
+            />
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Altura</Text>
-            <TextInput style={styles.infoInput} placeholder="Ex: 1.80 m" placeholderTextColor="#666" />
+            <TextInput
+              style={styles.infoInput}
+              value={usuario.altura}
+              onChangeText={(text) => setUsuario({ ...usuario, altura: text })}
+              placeholder="Ex: 1.80 m"
+              placeholderTextColor="#666"
+            />
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Idade</Text>
-            <TextInput style={styles.infoInput} placeholder="Ex: 30 anos" placeholderTextColor="#666" />
+            <TextInput
+              style={styles.infoInput}
+              value={usuario.idade}
+              onChangeText={(text) => setUsuario({ ...usuario, idade: text })}
+              placeholder="Ex: 30 anos"
+              placeholderTextColor="#666"
+            />
           </View>
         </View>
       </View>
@@ -76,7 +112,6 @@ const styles = StyleSheet.create({
     fontFamily: 'arial',
     marginBottom: 10,
   },
-  profileSection: { alignItems: 'center' },
   profileImage: {
     width: 100,
     height: 100,
@@ -102,37 +137,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'arial',
   },
-  achievementsContainer: { flexDirection: 'row', justifyContent: 'space-between' },
-  achievementCard: {
-    backgroundColor: '#222',
-    borderRadius: 10,
-    alignItems: 'center',
-    padding: 10,
-    width: '48%',
-  },
-  achievementTitle: {
-    color: '#FFF',
-    fontSize: 16,
-    fontFamily: 'arial',
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  trophyImage: { width: 80, height: 80, marginBottom: 10 },
-  medalImage: { width: 80, height: 80, marginBottom: 10 },
-  achievementDescription: {
-    color: '#aaa',
-    fontSize: 14,
-    fontFamily: 'arial',
-    textAlign: 'center',
-  },
   personalInfoContainer: { marginTop: 10, width: '100%' },
-  infoRow: { display: 'flex', width: '100%', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   infoLabel: {
     color: '#FFF',
     fontFamily: 'arial',
     fontSize: 16,
-    alignContent: 'center',
     fontWeight: 'bold',
+    alignSelf: 'center',
   },
   infoInput: {
     width: 150,

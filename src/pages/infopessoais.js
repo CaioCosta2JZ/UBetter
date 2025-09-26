@@ -7,6 +7,24 @@ const InfoPessoais = ({ navigation }) => {
     const [peso, setPeso] = useState("");
     const [idade, setIdade] = useState("");
 
+    const salvarInfoPessoais = () => {
+            // 2. Salvar dados no Realtime Database
+            set(ref(db, "usuarios/" + user.uid), {
+              altura: altura,
+              peso: peso,
+              idade: idade
+            })
+              .then(() => {
+                alert("Sucesso", "Usuário cadastrado com sucesso");
+                setAltura("");
+                setPeso("");
+                setIdade("");
+              })
+              .catch((error) => {
+                Alert.alert("Erro ao salvar no banco", error.message);
+              });
+            };
+
     return (
         <>
 
@@ -174,5 +192,5 @@ const styles = StyleSheet.create({
         fontWeight: 'semi-bold',
         color: '#2DFF92',
     }
-})
+});
 export default InfoPessoais;
