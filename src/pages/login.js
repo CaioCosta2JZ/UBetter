@@ -1,12 +1,29 @@
 import React, { useState } from "react";
 import { Text, TextInput, View, TouchableOpacity, StyleSheet, Image } from 'react-native';
-
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
 const TelaLogin = ({ navigation }) => {
-    const [email, setEmail] = useState("");
-    const [senha, setSenha] = useState("");
+    const [email] = useState(" ");
+    const [senha] = useState("");
 
-    
+    // Função de login
+    const login = () => {
+        if ( !email || !senha) {
+          Alert.alert("Erro", "Preencha todos os campos!");
+          return;
+        }
+    const auth = getAuth();
+    signInWithEmailAndPassword(auth, email, senha)
+    .then((userCredential) => {
+     // Signed in 
+        const user = userCredential.user;
+     // ...
+    })
+    .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+    })
+};
 
     return (
         <>
@@ -20,13 +37,13 @@ const TelaLogin = ({ navigation }) => {
                 <View style={styles.formulario}>
                     <Text style={styles.coisa}>Email</Text>
                     <TextInput style={styles.input} placeholder="Email" keyboardType="text" value={email}
-                        onChangeText={setEmail} />
+                        onChangeText={email} />
 
                     <Text style={styles.coisa}>Senha</Text>
                     <TextInput style={styles.input} placeholder="Senha"value={senha}
-                        onChangeText={setSenha} secureTextEntry />
+                        onChangeText={senha} secureTextEntry />
 
-                    <TouchableOpacity style={styles.botao}>
+                    <TouchableOpacity style={styles.botao}onPress={login}>
                         <Text style={styles.textoBotao}>Entrar</Text>
                     </TouchableOpacity>
                     <Text style={styles.coisa2} onPress={() => navigation.navigate('Cadastro')}>Não tem conta? {' '}
