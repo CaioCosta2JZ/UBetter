@@ -35,8 +35,8 @@ cd UBetter
 # Instale as dependências
 npm install
 
-# Execute o projeto
-npm start
+# Execute o projeto (com expo)
+npx expo start
 ```
 
 ## ✨ Funcionalidades
