@@ -3,9 +3,9 @@ import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ref, set, get, push, update } from 'firebase/database';
+import { ref, set, get, push, update, off } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
-import { fdb } from "../config/firebase";
+import { db } from "../config/firebase";
 
 export default function Home({ route }) {
   const [contagemDias, setContagemDias] = useState(0);
@@ -64,16 +64,68 @@ export default function Home({ route }) {
     }
   }, [route.params?.newGoal]);
 
+  // Atualiza no banco sempre que contagemDias muda
+  useEffect(() => {
+    if (user) {
+      const dataAtual = getDataAtual();
+      const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/agua`);
+      set(contagemRef, contagemAgua).catch(error =>
+        console.error('Erro ao atualizar contagem água:', error)
+      );
+    }
+  }, [contagemAgua, user]);
+
+  useEffect(() => {
+    if (user) {
+      const dataAtual = getDataAtual();
+      const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/caminhada`);
+      set(contagemRef, contagemCaminhada).catch(error =>
+        console.error('Erro ao atualizar contagem caminhada:', error)
+      );
+    }
+  }, [contagemCaminhada, user]);
+
+  useEffect(() => {
+    if (user) {
+      const dataAtual = getDataAtual();
+      const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/sono`);
+      set(contagemRef, contagemSono).catch(error =>
+        console.error('Erro ao atualizar contagem sono:', error)
+      );
+    }
+  }, [contagemSono, user]);
+
+  // Função para carregar as metas mais recentes
+  const carregarMetasRecentes = async () => {
+    if (!user) return;
+    try {
+      const metasRef = ref(db, `usuarios/${user.uid}/metas`);
+      const metasSnapshot = await get(metasRef);
+      if (metasSnapshot.exists()) {
+        const metas = metasSnapshot.val();
+        setMetaAgua(metas.agua || 0);
+        setMetaCaminhada(metas.caminhada || 0);
+        setMetaSono(metas.sono || 0);
+      } else {
+        setMetaAgua(0);
+        setMetaCaminhada(0);
+        setMetaSono(0);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar metas recentes:', error);
+    }
+  };
+
   const carregarDados = async () => {
     if (!user) return;
 
     try {
       const dataAtual = getDataAtual();
-      
+
       // Carregar contagem diária
-      const contagemRef = ref(fdb, `usuarios/${user.uid}/contagens/${dataAtual}`);
+      const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}`);
       const contagemSnapshot = await get(contagemRef);
-      
+
       if (contagemSnapshot.exists()) {
         const dados = contagemSnapshot.val();
         setContagemAgua(dados.agua || 0);
@@ -82,9 +134,9 @@ export default function Home({ route }) {
       }
 
       // Carregar metas
-      const metasRef = ref(fdb, `usuarios/${user.uid}/metas`);
+      const metasRef = ref(db, `usuarios/${user.uid}/metas`);
       const metasSnapshot = await get(metasRef);
-      
+
       if (metasSnapshot.exists()) {
         const metas = metasSnapshot.val();
         setMetaAgua(metas.agua || 0);
@@ -93,9 +145,9 @@ export default function Home({ route }) {
       }
 
       // Carregar contagem de dias
-      const diasRef = ref(fdb, `usuarios/${user.uid}/estatisticas/diasConsecutivos`);
+      const diasRef = ref(db, `usuarios/${user.uid}/estatisticas/diasConsecutivos`);
       const diasSnapshot = await get(diasRef);
-      
+
       if (diasSnapshot.exists()) {
         setContagemDias(diasSnapshot.val());
       }
@@ -104,11 +156,16 @@ export default function Home({ route }) {
     }
   };
 
+  // Add validation to salvarMeta
   const salvarMeta = async (tipo, valor) => {
     if (!user) return;
+    if (valor <= 0) {
+      console.error('Valor da meta deve ser maior que zero');
+      return;
+    }
 
     try {
-      const metaRef = ref(fdb, `usuarios/${user.uid}/metas/${tipo}`);
+      const metaRef = ref(db, `usuarios/${user.uid}/metas/${tipo}`);
       await set(metaRef, valor);
     } catch (error) {
       console.error('Erro ao salvar meta:', error);
@@ -121,13 +178,13 @@ export default function Home({ route }) {
     try {
       const dataAtual = getDataAtual();
       const timestamp = new Date().toISOString();
-      
+
       // Salvar contagem diária
-      const contagemRef = ref(fdb, `usuarios/${user.uid}/contagens/${dataAtual}/${tipo}`);
+      const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/${tipo}`);
       await set(contagemRef, novoValor);
 
       // Salvar histórico para estatísticas
-      const historicoRef = ref(fdb, `usuarios/${user.uid}/historico/${tipo}`);
+      const historicoRef = ref(db, `usuarios/${user.uid}/historico/${tipo}`);
       const novoRegistro = push(historicoRef);
       await set(novoRegistro, {
         valor: novoValor,
@@ -146,9 +203,9 @@ export default function Home({ route }) {
     if (!user) return;
 
     try {
-      const estatisticasRef = ref(fdb, `usuarios/${user.uid}/estatisticas/${tipo}`);
+      const estatisticasRef = ref(db, `usuarios/${user.uid}/estatisticas/${tipo}`);
       const snapshot = await get(estatisticasRef);
-      
+
       let estatisticas = {
         total: 0,
         media: 0,
@@ -168,8 +225,12 @@ export default function Home({ route }) {
     }
   };
 
+  // Remove duplicate useEffect for carregarMetasRecentes since it's handled in carregarDados
+
+  // Fix verificarMeta to check meta value before deletion
   const verificarMeta = (valor, meta, tipo) => {
-    if (valor >= meta && meta > 0) {
+    if (!meta || meta <= 0) return;
+    if (valor >= meta) {
       switch (tipo) {
         case 'Água':
           if (!metaAguaConcluida) {
@@ -177,6 +238,7 @@ export default function Home({ route }) {
             setMetaConcluida(`Você concluiu sua meta de ${meta} L de água!`);
             setModalConclusaoVisible(true);
             incrementarDiasConsecutivos();
+            deletarMeta('agua');
           }
           break;
         case 'Caminhada':
@@ -185,6 +247,7 @@ export default function Home({ route }) {
             setMetaConcluida(`Você concluiu sua meta de ${meta} km de caminhada!`);
             setModalConclusaoVisible(true);
             incrementarDiasConsecutivos();
+            deletarMeta('caminhada');
           }
           break;
         case 'Sono':
@@ -193,9 +256,25 @@ export default function Home({ route }) {
             setMetaConcluida(`Você concluiu sua meta de ${meta} h de sono!`);
             setModalConclusaoVisible(true);
             incrementarDiasConsecutivos();
+            deletarMeta('sono');
           }
           break;
       }
+    }
+  };
+
+  // Função para deletar meta do banco
+  const deletarMeta = async (metaId) => {
+    if (!user) return;
+    try {
+      const metaRef = ref(db, `usuarios/${user.uid}/metas/${metaId}`);
+      await set(metaRef, null);
+      // Atualiza o estado local
+      if (metaId === 'agua') setMetaAgua(0);
+      if (metaId === 'caminhada') setMetaCaminhada(0);
+      if (metaId === 'sono') setMetaSono(0);
+    } catch (error) {
+      console.error('Erro ao deletar meta:', error);
     }
   };
 
@@ -203,7 +282,7 @@ export default function Home({ route }) {
     if (!user) return;
 
     try {
-      const diasRef = ref(fdb, `usuarios/${user.uid}/estatisticas/diasConsecutivos`);
+      const diasRef = ref(db, `usuarios/${user.uid}/estatisticas/diasConsecutivos`);
       const novoDias = contagemDias + 1;
       await set(diasRef, novoDias);
       setContagemDias(novoDias);
@@ -256,23 +335,28 @@ export default function Home({ route }) {
 
   return (
     <ScrollView style={styles.containerHome} showsVerticalScrollIndicator={false}>
-      
+
       <LinearGradient
         colors={['#005B28', '#182F22', '#212121']}
-        style={{ display: "flex",
-              justifyContent: "space-between",
-              height: 200,
-              shadowColor: '#000',
-              alignItems: "center",
-              padding: 25,
-              borderRadius: 16,
-              color: "#666666",
-              marginHorizontal: 20,}}
-              start={{ x: 0.0, 
-                      y: 0.0,
-                      }}
-              end={{ x: 1.0,
-                      y: 1.0, }}>
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          height: 200,
+          shadowColor: '#000',
+          alignItems: "center",
+          padding: 25,
+          borderRadius: 16,
+          color: "#666666",
+          marginHorizontal: 20,
+        }}
+        start={{
+          x: 0.0,
+          y: 0.0,
+        }}
+        end={{
+          x: 1.0,
+          y: 1.0,
+        }}>
         <Text style={styles.tituloCard}>Meta diária</Text>
         <Text style={styles.contagemDias} id="contagemDias">
           {contagemDias} Dias
@@ -287,152 +371,152 @@ export default function Home({ route }) {
       </View>
 
       <View style={styles.tarefas}>
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Água</Text>
-              <View style={styles.cardAgua}>
-                <Ionicons name="water-outline" size={24} color="#007AFF" />
-              </View>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Água</Text>
+            <View style={styles.cardAgua}>
+              <Ionicons name="water-outline" size={24} color="#007AFF" />
             </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.valueText}>{contagemAgua} L</Text>
-              <Text style={styles.targetText}>{metaAgua}</Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressAgua, { width: calcularProgresso(contagemAgua, metaAgua) }]} />
-            </View>
-            <TouchableOpacity style={styles.botaoAgua} onPress={() => setModalAguaVisible(true)}>
-              <Ionicons name="add-outline" size={24} color="#007AFF" />
-            </TouchableOpacity>
           </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.valueText}>{contagemAgua} L</Text>
+            <Text style={styles.targetText}>{metaAgua}</Text>
+          </View>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressAgua, { width: calcularProgresso(contagemAgua, metaAgua) }]} />
+          </View>
+          <TouchableOpacity style={styles.botaoAgua} onPress={() => setModalAguaVisible(true)}>
+            <Ionicons name="add-outline" size={24} color="#007AFF" />
+          </TouchableOpacity>
+        </View>
 
-          <Modal
-            animationType="fade"
-            transparent={true}
-            visible={modalAguaVisible}
-            onRequestClose={() => setModalAguaVisible(false)}>
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Adicionar Água</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Quantidade em ml"
-                  placeholderTextColor="#666"
-                  keyboardType="numeric"
-                  value={novaQuantidadeAgua}
-                  onChangeText={setNovaQuantidadeAgua}
-                />
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity style={styles.modalButton} onPress={adicionarAgua}>
-                    <Text style={styles.modalButtonText}>Adicionar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.modalButton} onPress={() => setModalAguaVisible(false)}>
-                    <Text style={styles.modalButtonText}>Cancelar</Text>
-                  </TouchableOpacity>
-                </View>
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalAguaVisible}
+          onRequestClose={() => setModalAguaVisible(false)}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Adicionar Água</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Quantidade em ml"
+                placeholderTextColor="#666"
+                keyboardType="numeric"
+                value={novaQuantidadeAgua}
+                onChangeText={setNovaQuantidadeAgua}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity style={styles.modalButton} onPress={adicionarAgua}>
+                  <Text style={styles.modalButtonText}>Adicionar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalButton} onPress={() => setModalAguaVisible(false)}>
+                  <Text style={styles.modalButtonText}>Cancelar</Text>
+                </TouchableOpacity>
               </View>
             </View>
-          </Modal>
+          </View>
+        </Modal>
 
-     <View style={styles.card}>
-           <View style={styles.cardHeader}>
-             <Text style={styles.cardTitle}>Caminhada</Text>
-             <View style={styles.cardCaminhada}>
-               <Ionicons name="walk-outline" size={24} color="#B91B1B" />
-             </View>
-           </View>
-           <View style={styles.cardContent}>
-             <Text style={styles.valueText}>{contagemCaminhada}</Text>
-             <Text style={styles.targetText}>{metaCaminhada}</Text>
-           </View>
-           <View style={styles.progressBar}>
-             <View style={[styles.progressCam, { width: calcularProgresso(contagemCaminhada, metaCaminhada) }]} />
-           </View>
-           <TouchableOpacity style={styles.botaoCam} onPress={() => setModalCaminhadaVisible(true)}>
-             <Ionicons name="add-outline" size={24} color="#B91B1B" />
-           </TouchableOpacity>
-         </View>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Caminhada</Text>
+            <View style={styles.cardCaminhada}>
+              <Ionicons name="walk-outline" size={24} color="#B91B1B" />
+            </View>
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.valueText}>{contagemCaminhada}</Text>
+            <Text style={styles.targetText}>{metaCaminhada}</Text>
+          </View>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressCam, { width: calcularProgresso(contagemCaminhada, metaCaminhada) }]} />
+          </View>
+          <TouchableOpacity style={styles.botaoCam} onPress={() => setModalCaminhadaVisible(true)}>
+            <Ionicons name="add-outline" size={24} color="#B91B1B" />
+          </TouchableOpacity>
+        </View>
 
-         <Modal
-            animationType="fade"
-            transparent={true}
-            visible={modalCaminhadaVisible}
-            onRequestClose={() => setModalCaminhadaVisible(false)}>
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Adicionar Caminhada</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Minutos caminhados"
-                  placeholderTextColor="#666"
-                  keyboardType="numeric"
-                  value={novaQuantidadeCaminhada}
-                  onChangeText={setNovaQuantidadeCaminhada}
-                />
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity style={styles.modalButton} onPress={adicionarCaminhada}>
-                    <Text style={styles.modalButtonText}>Adicionar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.modalButton} onPress={() => setModalCaminhadaVisible(false)}>
-                    <Text style={styles.modalButtonText}>Cancelar</Text>
-                  </TouchableOpacity>
-                </View>
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalCaminhadaVisible}
+          onRequestClose={() => setModalCaminhadaVisible(false)}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Adicionar Caminhada</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Minutos caminhados"
+                placeholderTextColor="#666"
+                keyboardType="numeric"
+                value={novaQuantidadeCaminhada}
+                onChangeText={setNovaQuantidadeCaminhada}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity style={styles.modalButton} onPress={adicionarCaminhada}>
+                  <Text style={styles.modalButtonText}>Adicionar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalButton} onPress={() => setModalCaminhadaVisible(false)}>
+                  <Text style={styles.modalButtonText}>Cancelar</Text>
+                </TouchableOpacity>
               </View>
             </View>
-          </Modal>
-         
+          </View>
+        </Modal>
+
       </View>
       <View style={styles.tarefas2}>
         <View style={styles.cardFull}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Sono hoje</Text>
-              <View style={styles.cardSono}>
-                <Ionicons name="moon-outline" size={24} color="#099747" />
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Sono hoje</Text>
+            <View style={styles.cardSono}>
+              <Ionicons name="moon-outline" size={24} color="#099747" />
+            </View>
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.valueText}>{contagemSono}
+            </Text>
+            <Text style={styles.targetText}>{metaSono}</Text>
+          </View>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressSono, { width: calcularProgresso(contagemSono, metaSono) }]} />
+          </View>
+          <TouchableOpacity style={styles.botaoSono} onPress={() => setModalSonoVisible(true)}>
+            <Ionicons name="add-outline" size={24} color="#099747" />
+          </TouchableOpacity>
+        </View>
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalSonoVisible}
+          onRequestClose={() => setModalSonoVisible(false)}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Adicionar Sono</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Horas dormidas"
+                placeholderTextColor="#666"
+                keyboardType="numeric"
+                value={novaQuantidadeSono}
+                onChangeText={setNovaQuantidadeSono}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity style={styles.modalButton} onPress={adicionarSono}>
+                  <Text style={styles.modalButtonText}>Adicionar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalButton} onPress={() => setModalSonoVisible(false)}>
+                  <Text style={styles.modalButtonText}>Cancelar</Text>
+                </TouchableOpacity>
               </View>
             </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.valueText}>{contagemSono}
-              </Text>
-              <Text style={styles.targetText}>{metaSono}</Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressSono, { width: calcularProgresso(contagemSono, metaSono) }]} />
-            </View>
-            <TouchableOpacity style={styles.botaoSono} onPress={() => setModalSonoVisible(true)}>
-              <Ionicons name="add-outline" size={24} color="#099747" />
-            </TouchableOpacity>
-            </View>
+          </View>
+        </Modal>
+      </View>
 
-            <Modal
-              animationType="fade"
-              transparent={true}
-              visible={modalSonoVisible}
-              onRequestClose={() => setModalSonoVisible(false)}>
-              <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Adicionar Sono</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Horas dormidas"
-                    placeholderTextColor="#666"
-                    keyboardType="numeric"
-                    value={novaQuantidadeSono}
-                    onChangeText={setNovaQuantidadeSono}
-                  />
-                  <View style={styles.modalButtons}>
-                    <TouchableOpacity style={styles.modalButton} onPress={adicionarSono}>
-                      <Text style={styles.modalButtonText}>Adicionar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.modalButton} onPress={() => setModalSonoVisible(false)}>
-                      <Text style={styles.modalButtonText}>Cancelar</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </Modal>
-       </View>
-
-       <Modal
+      <Modal
         animationType="fade"
         transparent={true}
         visible={modalConclusaoVisible}
@@ -441,15 +525,15 @@ export default function Home({ route }) {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Parabéns!</Text>
             <Text style={styles.modalText}>{metaConcluida}</Text>
-            <TouchableOpacity 
-              style={styles.modalButton} 
+            <TouchableOpacity
+              style={styles.modalButton}
               onPress={() => setModalConclusaoVisible(false)}>
               <Text style={styles.modalButtonText}>Fechar</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-    </ScrollView >
+    </ScrollView>
   );
 }
 
@@ -478,10 +562,10 @@ const styles = StyleSheet.create({
     textAlign: "left",
     paddingBottom: 20,
   },
-  
+
   tarefasAtuais: {
     paddingLeft: 20,
-    
+
     color: "white",
     fontSize: 20,
     marginTop: 20,
@@ -517,8 +601,8 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     fontFamily: 'arial',
   },
-    tarefas2: {
-      fontFamily: 'arial',
+  tarefas2: {
+    fontFamily: 'arial',
     paddingTop: 5,
     flex: 1,
     flexDirection: 'column  ',

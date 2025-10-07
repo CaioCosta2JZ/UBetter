@@ -5,6 +5,7 @@ import { ref, onValue, update } from "firebase/database";
 
 const Perfil = () => {
   const [usuario, setUsuario] = useState({
+    nome: "",
     peso: "",
     altura: "",
     idade: "",
@@ -32,6 +33,7 @@ const Perfil = () => {
 
     const usuarioRef = ref(db, "usuarios/" + user.uid);
     update(usuarioRef, {
+      nome: usuario.nome,
       peso: usuario.peso,
       altura: usuario.altura,
       idade: usuario.idade,
@@ -45,7 +47,7 @@ const Perfil = () => {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Informações do Perfil</Text>
         <Image style={styles.profileImage} />
-        <Text style={styles.profileName}>Nome do usuário</Text>
+        <Text style={styles.profileName}  value={usuario.nome}></Text>
         <TouchableOpacity style={styles.editButton} onPress={handleSalvar}>
           <Text style={styles.editButtonText}>Salvar</Text>
         </TouchableOpacity>

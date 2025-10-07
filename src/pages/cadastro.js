@@ -16,10 +16,16 @@ const TelaCadastro = ({ navigation }) => {
       return;
     }
 
+    if (senha.length < 6) {
+      Alert.alert("Erro", "A senha deve ter pelo menos 6 caracteres!");
+      return;
+    }
+
     if (senha !== confirmarSenha) {
       Alert.alert("Erro", "As senhas não coincidem!");
       return;
     }
+
 
     // 1. Criar usuário no Auth
     createUserWithEmailAndPassword(auth, email, senha)

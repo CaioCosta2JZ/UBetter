@@ -1,7 +1,39 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Linking, Alert } from 'react-native';
+import { auth } from "../config/firebase";
+import { getAuth, signOut } from 'firebase/auth';
+import { useNavigation } from '@react-navigation/native';
 
 const Configuracoes = () => {
+  const navigation = useNavigation();
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Confirmação",
+      "Tem certeza que deseja sair?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        {
+          text: "Sair",
+          onPress: async () => {
+            try {
+              await signOut(auth);
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            } catch (error) {
+              Alert.alert("Erro", "Não foi possível sair. Tente novamente.");
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.card}>
@@ -9,8 +41,9 @@ const Configuracoes = () => {
         <Image source={require('../../assets/UBetter.png')} style={styles.logo} />
         <TouchableOpacity
           style={styles.logoutButton}
+          onPress={handleLogout}
         >
-          <Text style={styles.logoutButtonText}>Sair do aplicativo</Text>
+          <Text style={styles.logoutButtonText}>Sair da conta</Text>
         </TouchableOpacity>
       </View>
     </View>
