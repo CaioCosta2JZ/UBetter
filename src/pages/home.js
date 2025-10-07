@@ -8,7 +8,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function Home() {
   const [contagemDias, setContagemDias] = useState(0);
   const [contagemAgua, setContgemAgua] = useState(0);
-  const [novaQuantidadeAgua, setNovaQuantidadeAgua] = useState('');
   const [metaAgua, setMetaAgua] = useState(0);
   const [contagemCaminhada, setContagemCaminhada] = useState(0);
   const [novaQuantidadeCaminhada, setNovaQuantidadeCaminhada] = useState('');
@@ -46,6 +45,42 @@ export default function Home() {
       setModalSonoVisible(false);
     }
   };
+
+  saveHealthHabitsGoals(contagemDias, contagemAgua, metaAgua, contagemCaminhada, metaCaminhada, contagemSono, metaSono)
+      .then((userCredential) => {
+        const user = userCredential.user;
+
+        // 2. Salvar dados no Realtime Database usando o UID
+        set(ref(fdb, "usuarios/" + user.uid), {
+          contagemDias: contagemDias,
+         
+          contagemAgua: contagemAgua,
+          metaAgua: metaAgua,
+          contagemCaminhada: caminhadaCaminhada,
+          metaCaminhada: metaCaminhada,
+          contagemSono: contagemSono,
+          metaSono: metaSono
+
+        })
+          .then(() => {
+            Alert.alert("Sucesso", "Usuário cadastrado com sucesso");
+
+            setContagemDias("");
+            setContagemAgua("");
+            setMetaAgua("");
+            setContagemCaminhada("");
+            setMetaCaminhada("");
+            setContagemSono("");
+            setMetaSono("");
+            navigation.navigate("Home"); // ir para home, logicamente 
+          })
+          .catch((error) => {
+            Alert.alert("Erro ao salvar no banco", error.message);
+          });
+      })
+      .catch((error) => {
+        Alert.alert("Erro em tudo", error.message);
+      });
 
   return (
     <ScrollView style={styles.containerHome} showsVerticalScrollIndicator={false}>
