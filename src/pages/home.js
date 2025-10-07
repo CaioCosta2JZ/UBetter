@@ -1,6 +1,6 @@
 import React from "react";
 import { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -8,11 +8,44 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function Home() {
   const [contagemDias, setContagemDias] = useState(0);
   const [contagemAgua, setContgemAgua] = useState(0);
+  const [novaQuantidadeAgua, setNovaQuantidadeAgua] = useState('');
   const [metaAgua, setMetaAgua] = useState(0);
   const [contagemCaminhada, setContagemCaminhada] = useState(0);
+  const [novaQuantidadeCaminhada, setNovaQuantidadeCaminhada] = useState('');
   const [metaCaminhada, setMetaCaminhada] = useState(0);
   const [contagemSono, setContagemSono] = useState(0);
+  const [novaQuantidadeSono, setNovaQuantidadeSono] = useState('');
   const [metaSono, setMetaSono] = useState(0);
+  const [modalAguaVisible, setModalAguaVisible] = useState(false);
+  const [modalCaminhadaVisible, setModalCaminhadaVisible] = useState(false);
+  const [modalSonoVisible, setModalSonoVisible] = useState(false);
+
+  const adicionarAgua = () => {
+    const quantidade = parseFloat(novaQuantidadeAgua);
+    if (!isNaN(quantidade)) {
+      setContgemAgua(contagemAgua + quantidade);
+      setNovaQuantidadeAgua('');
+      setModalAguaVisible(false);
+    }
+  };
+
+  const adicionarCaminhada = () => {
+    const quantidade = parseFloat(novaQuantidadeCaminhada);
+    if (!isNaN(quantidade)) {
+      setContagemCaminhada(contagemCaminhada + quantidade);
+      setNovaQuantidadeCaminhada('');
+      setModalCaminhadaVisible(false);
+    }
+  };
+
+  const adicionarSono = () => {
+    const quantidade = parseFloat(novaQuantidadeSono);
+    if (!isNaN(quantidade)) {
+      setContagemSono(contagemSono + quantidade);
+      setNovaQuantidadeSono('');
+      setModalSonoVisible(false);
+    }
+  };
 
   return (
     <ScrollView style={styles.containerHome} showsVerticalScrollIndicator={false}>
@@ -65,11 +98,38 @@ export default function Home() {
             <View style={styles.progressBar}>
               <View style={[styles.progressAgua, { width: '50%' }]} />
             </View>
-            <TouchableOpacity style={styles.botaoAgua}>
+            <TouchableOpacity style={styles.botaoAgua} onPress={() => setModalAguaVisible(true)}>
               <Ionicons name="add-outline" size={24} color="#007AFF" />
             </TouchableOpacity>
           </View>
-       
+
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalAguaVisible}
+            onRequestClose={() => setModalAguaVisible(false)}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Adicionar Água</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Quantidade em ml"
+                  placeholderTextColor="#666"
+                  keyboardType="numeric"
+                  value={novaQuantidadeAgua}
+                  onChangeText={setNovaQuantidadeAgua}
+                />
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity style={styles.modalButton} onPress={adicionarAgua}>
+                    <Text style={styles.modalButtonText}>Adicionar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.modalButton} onPress={() => setModalAguaVisible(false)}>
+                    <Text style={styles.modalButtonText}>Cancelar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
 
      <View style={styles.card}>
            <View style={styles.cardHeader}>
@@ -85,10 +145,38 @@ export default function Home() {
            <View style={styles.progressBar}>
              <View style={[styles.progressCam, { width: '50%' }]} />
            </View>
-           <TouchableOpacity style={styles.botaoCam}>
+           <TouchableOpacity style={styles.botaoCam} onPress={() => setModalCaminhadaVisible(true)}>
              <Ionicons name="add-outline" size={24} color="#B91B1B" />
            </TouchableOpacity>
          </View>
+
+         <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalCaminhadaVisible}
+            onRequestClose={() => setModalCaminhadaVisible(false)}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Adicionar Caminhada</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Minutos caminhados"
+                  placeholderTextColor="#666"
+                  keyboardType="numeric"
+                  value={novaQuantidadeCaminhada}
+                  onChangeText={setNovaQuantidadeCaminhada}
+                />
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity style={styles.modalButton} onPress={adicionarCaminhada}>
+                    <Text style={styles.modalButtonText}>Adicionar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.modalButton} onPress={() => setModalCaminhadaVisible(false)}>
+                    <Text style={styles.modalButtonText}>Cancelar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
          
       </View>
       <View style={styles.tarefas2}>
@@ -107,10 +195,38 @@ export default function Home() {
             <View style={styles.progressBar}>
               <View style={[styles.progressSono, { width: '75%' }]} />
             </View>
-            <TouchableOpacity style={styles.botaoSono}>
+            <TouchableOpacity style={styles.botaoSono} onPress={() => setModalSonoVisible(true)}>
               <Ionicons name="add-outline" size={24} color="#099747" />
             </TouchableOpacity>
             </View>
+
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={modalSonoVisible}
+              onRequestClose={() => setModalSonoVisible(false)}>
+              <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Adicionar Sono</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Horas dormidas"
+                    placeholderTextColor="#666"
+                    keyboardType="numeric"
+                    value={novaQuantidadeSono}
+                    onChangeText={setNovaQuantidadeSono}
+                  />
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity style={styles.modalButton} onPress={adicionarSono}>
+                      <Text style={styles.modalButtonText}>Adicionar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.modalButton} onPress={() => setModalSonoVisible(false)}>
+                      <Text style={styles.modalButtonText}>Cancelar</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
        </View>
     </ScrollView >
   );
@@ -295,5 +411,49 @@ const styles = StyleSheet.create({
     backgroundColor: '#045125',
     padding: 8,
     borderRadius: 12,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#1C1C1E',
+    borderRadius: 16,
+    padding: 20,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    color: '#FFF',
+    fontSize: 20,
+    marginBottom: 20,
+    fontWeight: 'bold',
+  },
+  input: {
+    backgroundColor: '#333',
+    borderRadius: 8,
+    padding: 10,
+    width: '100%',
+    color: '#FFF',
+    marginBottom: 15,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    gap: 10,
+  },
+  modalButton: {
+    backgroundColor: '#333',
+    padding: 10,
+    borderRadius: 8,
+    flex: 1,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#FFF',
+    fontSize: 16,
   },
 });
