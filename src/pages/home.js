@@ -1,13 +1,14 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-
-export default function Home() {
+export default function Home({ route }) {
   const [contagemDias, setContagemDias] = useState(0);
-  const [contagemAgua, setContgemAgua] = useState(0);
+
+  const [contagemAgua, setContagemAgua] = useState(0);
+  const [novaQuantidadeAgua, setNovaQuantidadeAgua] = useState('');
   const [metaAgua, setMetaAgua] = useState(0);
   const [contagemCaminhada, setContagemCaminhada] = useState(0);
   const [novaQuantidadeCaminhada, setNovaQuantidadeCaminhada] = useState('');
@@ -18,75 +19,104 @@ export default function Home() {
   const [modalAguaVisible, setModalAguaVisible] = useState(false);
   const [modalCaminhadaVisible, setModalCaminhadaVisible] = useState(false);
   const [modalSonoVisible, setModalSonoVisible] = useState(false);
+  const [modalConclusaoVisible, setModalConclusaoVisible] = useState(false);
+  const [metaConcluida, setMetaConcluida] = useState('');
+  const [metaAguaConcluida, setMetaAguaConcluida] = useState(false);
+  const [metaCaminhadaConcluida, setMetaCaminhadaConcluida] = useState(false);
+  const [metaSonoConcluida, setMetaSonoConcluida] = useState(false);
+
+  useEffect(() => {
+    if (route.params?.newGoal) {
+      const { categoria, valor } = route.params.newGoal;
+      switch (categoria) {
+        case 'Água':
+          setMetaAgua(valor);
+          setContagemAgua(0);
+          setMetaAguaConcluida(false);
+          break;
+        case 'Caminhada':
+          setMetaCaminhada(valor);
+          setContagemCaminhada(0);
+          setMetaCaminhadaConcluida(false);
+          break;
+        case 'Sono':
+          setMetaSono(valor);
+          setContagemSono(0);
+          setMetaSonoConcluida(false);
+          break;
+      }
+    }
+  }, [route.params?.newGoal]);
+
+  const verificarMeta = (valor, meta, tipo) => {
+    if (valor >= meta && meta > 0) {
+      switch (tipo) {
+        case 'Água':
+          if (!metaAguaConcluida) {
+            setMetaAguaConcluida(true);
+            setMetaConcluida(`Você concluiu sua meta de ${meta} L de água!`);
+            setModalConclusaoVisible(true);
+          }
+          break;
+        case 'Caminhada':
+          if (!metaCaminhadaConcluida) {
+            setMetaCaminhadaConcluida(true);
+            setMetaConcluida(`Você concluiu sua meta de ${meta} km de caminhada!`);
+            setModalConclusaoVisible(true);
+          }
+          break;
+        case 'Sono':
+          if (!metaSonoConcluida) {
+            setMetaSonoConcluida(true);
+            setMetaConcluida(`Você concluiu sua meta de ${meta} h de sono!`);
+            setModalConclusaoVisible(true);
+          }
+          break;
+      }
+    }
+  };
 
   const adicionarAgua = () => {
     const quantidade = parseFloat(novaQuantidadeAgua);
     if (!isNaN(quantidade)) {
-      setContgemAgua(contagemAgua + quantidade);
+      const novoValor = contagemAgua + quantidade;
+      setContagemAgua(novoValor);
       setNovaQuantidadeAgua('');
       setModalAguaVisible(false);
+      verificarMeta(novoValor, metaAgua, 'Água');
     }
   };
 
   const adicionarCaminhada = () => {
     const quantidade = parseFloat(novaQuantidadeCaminhada);
     if (!isNaN(quantidade)) {
-      setContagemCaminhada(contagemCaminhada + quantidade);
+      const novoValor = contagemCaminhada + quantidade;
+      setContagemCaminhada(novoValor);
       setNovaQuantidadeCaminhada('');
       setModalCaminhadaVisible(false);
+      verificarMeta(novoValor, metaCaminhada, 'Caminhada');
     }
   };
 
   const adicionarSono = () => {
     const quantidade = parseFloat(novaQuantidadeSono);
     if (!isNaN(quantidade)) {
-      setContagemSono(contagemSono + quantidade);
+      const novoValor = contagemSono + quantidade;
+      setContagemSono(novoValor);
       setNovaQuantidadeSono('');
       setModalSonoVisible(false);
+      verificarMeta(novoValor, metaSono, 'Sono');
     }
   };
 
-  saveHealthHabitsGoals(contagemDias, contagemAgua, metaAgua, contagemCaminhada, metaCaminhada, contagemSono, metaSono)
-      .then((userCredential) => {
-        const user = userCredential.user;
-
-        // 2. Salvar dados no Realtime Database usando o UID
-        set(ref(fdb, "usuarios/" + user.uid), {
-          contagemDias: contagemDias,
-         
-          contagemAgua: contagemAgua,
-          metaAgua: metaAgua,
-          contagemCaminhada: caminhadaCaminhada,
-          metaCaminhada: metaCaminhada,
-          contagemSono: contagemSono,
-          metaSono: metaSono
-
-        })
-          .then(() => {
-            Alert.alert("Sucesso", "Usuário cadastrado com sucesso");
-
-            setContagemDias("");
-            setContagemAgua("");
-            setMetaAgua("");
-            setContagemCaminhada("");
-            setMetaCaminhada("");
-            setContagemSono("");
-            setMetaSono("");
-            navigation.navigate("Home"); // ir para home, logicamente 
-          })
-          .catch((error) => {
-            Alert.alert("Erro ao salvar no banco", error.message);
-          });
-      })
-      .catch((error) => {
-        Alert.alert("Erro em tudo", error.message);
-      });
+  const calcularProgresso = (atual, meta) => {
+    if (meta <= 0) return 0;
+    const progresso = (atual / meta) * 100;
+    return Math.min(progresso, 100) + '%';
+  };
 
   return (
     <ScrollView style={styles.containerHome} showsVerticalScrollIndicator={false}>
-      <View style={styles.topo}>
-        <Text style={styles.inicio}>Início</Text>
-      </View>
       
       <LinearGradient
         // Button Linear Gradient
@@ -127,11 +157,11 @@ export default function Home() {
               </View>
             </View>
             <View style={styles.cardContent}>
-              <Text style={styles.valueText}>{contagemAgua}</Text>
+              <Text style={styles.valueText}>{contagemAgua} L</Text>
               <Text style={styles.targetText}>{metaAgua}</Text>
             </View>
             <View style={styles.progressBar}>
-              <View style={[styles.progressAgua, { width: '50%' }]} />
+              <View style={[styles.progressAgua, { width: calcularProgresso(contagemAgua, metaAgua) }]} />
             </View>
             <TouchableOpacity style={styles.botaoAgua} onPress={() => setModalAguaVisible(true)}>
               <Ionicons name="add-outline" size={24} color="#007AFF" />
@@ -139,7 +169,7 @@ export default function Home() {
           </View>
 
           <Modal
-            animationType="slide"
+            animationType="fade"
             transparent={true}
             visible={modalAguaVisible}
             onRequestClose={() => setModalAguaVisible(false)}>
@@ -178,7 +208,7 @@ export default function Home() {
              <Text style={styles.targetText}>{metaCaminhada}</Text>
            </View>
            <View style={styles.progressBar}>
-             <View style={[styles.progressCam, { width: '50%' }]} />
+             <View style={[styles.progressCam, { width: calcularProgresso(contagemCaminhada, metaCaminhada) }]} />
            </View>
            <TouchableOpacity style={styles.botaoCam} onPress={() => setModalCaminhadaVisible(true)}>
              <Ionicons name="add-outline" size={24} color="#B91B1B" />
@@ -186,7 +216,7 @@ export default function Home() {
          </View>
 
          <Modal
-            animationType="slide"
+            animationType="fade"
             transparent={true}
             visible={modalCaminhadaVisible}
             onRequestClose={() => setModalCaminhadaVisible(false)}>
@@ -228,7 +258,7 @@ export default function Home() {
               <Text style={styles.targetText}>{metaSono}</Text>
             </View>
             <View style={styles.progressBar}>
-              <View style={[styles.progressSono, { width: '75%' }]} />
+              <View style={[styles.progressSono, { width: calcularProgresso(contagemSono, metaSono) }]} />
             </View>
             <TouchableOpacity style={styles.botaoSono} onPress={() => setModalSonoVisible(true)}>
               <Ionicons name="add-outline" size={24} color="#099747" />
@@ -236,7 +266,7 @@ export default function Home() {
             </View>
 
             <Modal
-              animationType="slide"
+              animationType="fade"
               transparent={true}
               visible={modalSonoVisible}
               onRequestClose={() => setModalSonoVisible(false)}>
@@ -263,6 +293,24 @@ export default function Home() {
               </View>
             </Modal>
        </View>
+
+       <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalConclusaoVisible}
+        onRequestClose={() => setModalConclusaoVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Parabéns!</Text>
+            <Text style={styles.modalText}>{metaConcluida}</Text>
+            <TouchableOpacity 
+              style={styles.modalButton} 
+              onPress={() => setModalConclusaoVisible(false)}>
+              <Text style={styles.modalButtonText}>Fechar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView >
   );
 }
@@ -271,6 +319,8 @@ const styles = StyleSheet.create({
   containerHome: {
     flex: 1,
     backgroundColor: '#101010',
+    paddingTop: 20,
+    paddingBottom: 20,
     marginTop: 0,
     marginVertical: 35,
   },
@@ -325,17 +375,17 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     gap: 10,
-    marginHorizontal: 20,
+    marginHorizontal: 5,
     paddingRight: 10,
     fontFamily: 'arial',
   },
     tarefas2: {
       fontFamily: 'arial',
-    paddingTop: 10,
+    paddingTop: 5,
     flex: 1,
     flexDirection: 'column  ',
     gap: 10,
-    marginHorizontal: 20,
+    marginHorizontal: 5,
   },
 
   card: {
@@ -388,7 +438,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: 40,
   },
-  cardIconSono: {
+  cardSono: {
     backgroundColor: '#045125',
     padding: 8,
     borderRadius: 12,
@@ -491,4 +541,10 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
   },
+  modalText: {
+    color: '#FFF',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  }
 });

@@ -1,35 +1,38 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const novaMeta = () => {
+const novaMeta = ({ navigation, route }) => {
   const [category, setCategory] = useState('');
   const [value, setValue] = useState('');
   const [period, setPeriod] = useState('');
 
   const saveGoal = () => {
-    
-    if (!value || value <= 0) {
-      alert('Por favor, insira um valor maior que 0.');
+    if (!category) {
+      Alert.alert('Erro', 'Por favor, selecione uma categoria.');
       return;
     }
-    else{
-     set(ref(db, "usuarios/" + user.uid), {
-              category: category,
-              value: value,
-              period: period
-            })
-              .then(() => {
-                alert(`Meta salva: ${value} ${category === 'Água' ? 'L' : category === 'Caminhada' ? 'km' : 'h'} ${period}`);
-                setCategory("");
-                setValue("");
-                setPeriod("");
-                navigation.navigate("home"); // ir para próxima tela
-              })
-              .catch((error) => {
-                Alert.alert("Erro ao salvar no banco", error.message);
-              });
+    
+    if (!value || value <= 0) {
+      Alert.alert('Erro', 'Por favor, insira um valor maior que 0.');
+      return;
     }
+
+    if (!period) {
+      Alert.alert('Erro', 'Por favor, selecione um período.');
+      return;
+    }
+
+    const newGoal = {
+      categoria: category,
+      valor: Number(value),
+      periodo: period,
+      dataCriacao: new Date().toISOString()
+    };
+
+    // Corrigindo a navegação para a tela inicial
+    navigation.navigate('Home', { newGoal });
+    Alert.alert('Sucesso', `Meta temporária salva: ${value} ${category === 'Água' ? 'L' : category === 'Caminhada' ? 'km' : 'h'} ${period}`);
   };
 
   return (
@@ -80,7 +83,9 @@ const novaMeta = () => {
           ))}
         </View>
         <View style={styles.buttonGroup}>
-          <TouchableOpacity style={styles.cancelButton}>
+          <TouchableOpacity 
+            style={styles.cancelButton} 
+            onPress={() => navigation.goBack()}>
             <Text style={styles.cancelButtonText}>Cancelar</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.saveButton} onPress={saveGoal}>
