@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { db } from "../config/firebase";
+import { ref, push, set, serverTimestamp } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
 
 const novaMeta = ({ navigation, route }) => {
   const [category, setCategory] = useState('');
   const [value, setValue] = useState('');
   const [period, setPeriod] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const saveGoal = () => {
+  const saveGoal = async () => {
     if (!category) {
       Alert.alert('Erro', 'Por favor, selecione uma categoria.');
       return;
@@ -23,16 +27,54 @@ const novaMeta = ({ navigation, route }) => {
       return;
     }
 
-    const newGoal = {
-      categoria: category,
-      valor: Number(value),
-      periodo: period,
-      dataCriacao: new Date().toISOString()
-    };
+    try {
+      setLoading(true);
+      
+      // Obtém o usuário autenticado
+      const auth = getAuth();
+      const user = auth.currentUser;
+      
+      if (!user) {
+        Alert.alert('Erro', 'Usuário não autenticado.');
+        setLoading(false);
+        return;
+      }
 
-    // Corrigindo a navegação para a tela inicial
-    navigation.navigate('Home', { newGoal });
-    Alert.alert('Sucesso', `Meta temporária salva: ${value} ${category === 'Água' ? 'L' : category === 'Caminhada' ? 'km' : 'h'} ${period}`);
+      // Cria o objeto da meta
+      const newGoal = {
+        categoria: category,
+        valor: Number(value),
+        periodo: period,
+        dataCriacao: new Date().toISOString(),
+        ativo: true
+      };
+
+      // Cria referência para o nó de metas do usuário e adiciona nova meta
+      const metasRef = ref(db, `usuarios/${user.uid}/metas`);
+      const newMetaRef = push(metasRef);
+      
+      // Salva no Realtime Database
+      await set(newMetaRef, newGoal);
+      
+      console.log('Meta salva com ID:', newMetaRef.key);
+      
+      Alert.alert(
+        'Sucesso', 
+        `Meta salva: ${value} ${category === 'Água' ? 'L' : category === 'Caminhada' ? 'km' : 'h'} ${period}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Home', { goalSaved: true })
+          }
+        ]
+      );
+      
+    } catch (error) {
+      console.error('Erro ao salvar meta:', error);
+      Alert.alert('Erro', 'Não foi possível salvar a meta. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -85,11 +127,17 @@ const novaMeta = ({ navigation, route }) => {
         <View style={styles.buttonGroup}>
           <TouchableOpacity 
             style={styles.cancelButton} 
-            onPress={() => navigation.goBack()}>
+            onPress={() => navigation.goBack()}
+            disabled={loading}>
             <Text style={styles.cancelButtonText}>Cancelar</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.saveButton} onPress={saveGoal}>
-            <Text style={styles.saveBbuttonText}>Salvar</Text>
+          <TouchableOpacity 
+            style={styles.saveButton} 
+            onPress={saveGoal}
+            disabled={loading}>
+            <Text style={styles.saveBbuttonText}>
+              {loading ? 'Salvando...' : 'Salvar'}
+            </Text>
           </TouchableOpacity>
         </View>
     </ScrollView>

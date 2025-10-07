@@ -3,10 +3,12 @@ import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ref, set, get, push, update } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
+import { fdb } from "../config/firebase";
 
 export default function Home({ route }) {
   const [contagemDias, setContagemDias] = useState(0);
-
   const [contagemAgua, setContagemAgua] = useState(0);
   const [novaQuantidadeAgua, setNovaQuantidadeAgua] = useState('');
   const [metaAgua, setMetaAgua] = useState(0);
@@ -25,28 +27,146 @@ export default function Home({ route }) {
   const [metaCaminhadaConcluida, setMetaCaminhadaConcluida] = useState(false);
   const [metaSonoConcluida, setMetaSonoConcluida] = useState(false);
 
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  // Função para obter data no formato YYYY-MM-DD
+  const getDataAtual = () => {
+    const data = new Date();
+    return data.toISOString().split('T')[0];
+  };
+
+  // Carregar dados do usuário ao iniciar
+  useEffect(() => {
+    if (user) {
+      carregarDados();
+    }
+  }, [user]);
+
+  // Atualizar metas quando receber nova meta
   useEffect(() => {
     if (route.params?.newGoal) {
       const { categoria, valor } = route.params.newGoal;
       switch (categoria) {
         case 'Água':
           setMetaAgua(valor);
-          setContagemAgua(0);
-          setMetaAguaConcluida(false);
+          salvarMeta('agua', valor);
           break;
         case 'Caminhada':
           setMetaCaminhada(valor);
-          setContagemCaminhada(0);
-          setMetaCaminhadaConcluida(false);
+          salvarMeta('caminhada', valor);
           break;
         case 'Sono':
           setMetaSono(valor);
-          setContagemSono(0);
-          setMetaSonoConcluida(false);
+          salvarMeta('sono', valor);
           break;
       }
     }
   }, [route.params?.newGoal]);
+
+  const carregarDados = async () => {
+    if (!user) return;
+
+    try {
+      const dataAtual = getDataAtual();
+      
+      // Carregar contagem diária
+      const contagemRef = ref(fdb, `usuarios/${user.uid}/contagens/${dataAtual}`);
+      const contagemSnapshot = await get(contagemRef);
+      
+      if (contagemSnapshot.exists()) {
+        const dados = contagemSnapshot.val();
+        setContagemAgua(dados.agua || 0);
+        setContagemCaminhada(dados.caminhada || 0);
+        setContagemSono(dados.sono || 0);
+      }
+
+      // Carregar metas
+      const metasRef = ref(fdb, `usuarios/${user.uid}/metas`);
+      const metasSnapshot = await get(metasRef);
+      
+      if (metasSnapshot.exists()) {
+        const metas = metasSnapshot.val();
+        setMetaAgua(metas.agua || 0);
+        setMetaCaminhada(metas.caminhada || 0);
+        setMetaSono(metas.sono || 0);
+      }
+
+      // Carregar contagem de dias
+      const diasRef = ref(fdb, `usuarios/${user.uid}/estatisticas/diasConsecutivos`);
+      const diasSnapshot = await get(diasRef);
+      
+      if (diasSnapshot.exists()) {
+        setContagemDias(diasSnapshot.val());
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    }
+  };
+
+  const salvarMeta = async (tipo, valor) => {
+    if (!user) return;
+
+    try {
+      const metaRef = ref(fdb, `usuarios/${user.uid}/metas/${tipo}`);
+      await set(metaRef, valor);
+    } catch (error) {
+      console.error('Erro ao salvar meta:', error);
+    }
+  };
+
+  const salvarContagem = async (tipo, novoValor) => {
+    if (!user) return;
+
+    try {
+      const dataAtual = getDataAtual();
+      const timestamp = new Date().toISOString();
+      
+      // Salvar contagem diária
+      const contagemRef = ref(fdb, `usuarios/${user.uid}/contagens/${dataAtual}/${tipo}`);
+      await set(contagemRef, novoValor);
+
+      // Salvar histórico para estatísticas
+      const historicoRef = ref(fdb, `usuarios/${user.uid}/historico/${tipo}`);
+      const novoRegistro = push(historicoRef);
+      await set(novoRegistro, {
+        valor: novoValor,
+        data: dataAtual,
+        timestamp: timestamp
+      });
+
+      // Atualizar estatísticas gerais
+      await atualizarEstatisticas(tipo, novoValor);
+    } catch (error) {
+      console.error('Erro ao salvar contagem:', error);
+    }
+  };
+
+  const atualizarEstatisticas = async (tipo, valor) => {
+    if (!user) return;
+
+    try {
+      const estatisticasRef = ref(fdb, `usuarios/${user.uid}/estatisticas/${tipo}`);
+      const snapshot = await get(estatisticasRef);
+      
+      let estatisticas = {
+        total: 0,
+        media: 0,
+        ultimaAtualizacao: new Date().toISOString()
+      };
+
+      if (snapshot.exists()) {
+        estatisticas = snapshot.val();
+      }
+
+      estatisticas.total = (estatisticas.total || 0) + valor;
+      estatisticas.ultimaAtualizacao = new Date().toISOString();
+
+      await set(estatisticasRef, estatisticas);
+    } catch (error) {
+      console.error('Erro ao atualizar estatísticas:', error);
+    }
+  };
 
   const verificarMeta = (valor, meta, tipo) => {
     if (valor >= meta && meta > 0) {
@@ -56,6 +176,7 @@ export default function Home({ route }) {
             setMetaAguaConcluida(true);
             setMetaConcluida(`Você concluiu sua meta de ${meta} L de água!`);
             setModalConclusaoVisible(true);
+            incrementarDiasConsecutivos();
           }
           break;
         case 'Caminhada':
@@ -63,6 +184,7 @@ export default function Home({ route }) {
             setMetaCaminhadaConcluida(true);
             setMetaConcluida(`Você concluiu sua meta de ${meta} km de caminhada!`);
             setModalConclusaoVisible(true);
+            incrementarDiasConsecutivos();
           }
           break;
         case 'Sono':
@@ -70,9 +192,23 @@ export default function Home({ route }) {
             setMetaSonoConcluida(true);
             setMetaConcluida(`Você concluiu sua meta de ${meta} h de sono!`);
             setModalConclusaoVisible(true);
+            incrementarDiasConsecutivos();
           }
           break;
       }
+    }
+  };
+
+  const incrementarDiasConsecutivos = async () => {
+    if (!user) return;
+
+    try {
+      const diasRef = ref(fdb, `usuarios/${user.uid}/estatisticas/diasConsecutivos`);
+      const novoDias = contagemDias + 1;
+      await set(diasRef, novoDias);
+      setContagemDias(novoDias);
+    } catch (error) {
+      console.error('Erro ao incrementar dias:', error);
     }
   };
 
@@ -83,6 +219,7 @@ export default function Home({ route }) {
       setContagemAgua(novoValor);
       setNovaQuantidadeAgua('');
       setModalAguaVisible(false);
+      salvarContagem('agua', quantidade);
       verificarMeta(novoValor, metaAgua, 'Água');
     }
   };
@@ -94,6 +231,7 @@ export default function Home({ route }) {
       setContagemCaminhada(novoValor);
       setNovaQuantidadeCaminhada('');
       setModalCaminhadaVisible(false);
+      salvarContagem('caminhada', quantidade);
       verificarMeta(novoValor, metaCaminhada, 'Caminhada');
     }
   };
@@ -105,6 +243,7 @@ export default function Home({ route }) {
       setContagemSono(novoValor);
       setNovaQuantidadeSono('');
       setModalSonoVisible(false);
+      salvarContagem('sono', quantidade);
       verificarMeta(novoValor, metaSono, 'Sono');
     }
   };
@@ -119,7 +258,6 @@ export default function Home({ route }) {
     <ScrollView style={styles.containerHome} showsVerticalScrollIndicator={false}>
       
       <LinearGradient
-        // Button Linear Gradient
         colors={['#005B28', '#182F22', '#212121']}
         style={{ display: "flex",
               justifyContent: "space-between",
