@@ -45,7 +45,6 @@ npx expo start
 -  Definição de metas de caminhada, consumo de água e horas para dormir
 -  Vizualizar relatórios diários e semanais
 -  Cadastro de usuário
--  Sistema de conquistas
 
 ## 🔧 Tecnologias utilizadas
 
