@@ -96,6 +96,7 @@ export default function Home({ route }) {
   }, [contagemSono, user]);
 
   // Função para carregar as metas mais recentes
+ useEffect(() => {
   const carregarMetasRecentes = async () => {
     if (!user) return;
     try {
@@ -115,7 +116,10 @@ export default function Home({ route }) {
       console.error('Erro ao carregar metas recentes:', error);
     }
   };
-
+   carregarMetasRecentes();
+ }, [
+ ]);
+ 
   const carregarDados = async () => {
     if (!user) return;
 
