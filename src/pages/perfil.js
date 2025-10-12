@@ -47,7 +47,7 @@ const Perfil = () => {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Informações do Perfil</Text>
         <Image style={styles.profileImage} />
-        <Text style={styles.profileName}  value={usuario.nome}></Text>
+        <Text style={styles.profileName}  value={usuario.nome}>{usuario.nome}</Text>
         <TouchableOpacity style={styles.editButton} onPress={handleSalvar}>
           <Text style={styles.editButtonText}>Salvar</Text>
         </TouchableOpacity>
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontFamily: 'arial',
-    fontWeight: 'bold',
+    fontWeight: 'semi-bold',
     marginBottom: 10,
   },
   editButton: {

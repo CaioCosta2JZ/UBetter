@@ -1,13 +1,15 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Linking, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Linking, Alert, BackHandler } from 'react-native';
 import { auth } from "../config/firebase";
-import { getAuth, signOut } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
 
 const Configuracoes = () => {
   const navigation = useNavigation();
+ 
 
   const handleLogout = async () => {
+    console.log("Botão clicado!");
     Alert.alert(
       "Confirmação",
       "Tem certeza que deseja sair?",
@@ -34,6 +36,27 @@ const Configuracoes = () => {
     );
   };
 
+   const ExitApp = () => {
+    console.log("Botão clicado!");
+    Alert.alert(
+      'Fechar App',
+      'Deseja realmente fechar o aplicativo?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Fechar',
+          
+          onPress: () => {
+            BackHandler.exitApp();
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.card}>
@@ -45,13 +68,22 @@ const Configuracoes = () => {
         >
           <Text style={styles.logoutButtonText}>Sair da conta</Text>
         </TouchableOpacity>
+
+          <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={ExitApp}
+        >
+          <Text style={styles.logoutButtonText}>Fechar app</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
+  container: { padding: 20,
+    flex: 1,
+   },
   card: {
     backgroundColor: '#1C1C1E',
     borderRadius: 16,

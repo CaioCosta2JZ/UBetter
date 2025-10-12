@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import Perfil from './perfil';
 import Configuracoes from './configuracoes';
 
+
 const PerfilScreen = () => {
   const [activeScreen, setActiveScreen] = useState('Perfil');
 

@@ -10,6 +10,7 @@ import PerfilScreen from './perfilScreen';
 import TelaLogin from './login';
 import TelaCadastro from './cadastro';
 import InfoPessoais from './infopessoais';
+import AuthNavigator from './autenticacao';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -75,7 +76,11 @@ export default function Routes() {
   return  (
     <Stack.Navigator  
       screenOptions={{ headerShown: false }}
-      initialRouteName="Cadastro">
+      initialRouteName="AuthCheck">
+
+        <Stack.Screen name="AuthCheck"
+         component={AuthNavigator}
+          />
       <Stack.Screen
         name="Login"
         component={TelaLogin}
@@ -94,6 +99,7 @@ export default function Routes() {
         name="InfoPessoais"
         component={InfoPessoais}
         />
+        
     </Stack.Navigator>
   );
 }
