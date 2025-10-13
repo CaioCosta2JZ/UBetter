@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Text, TextInput, View, TouchableOpacity, StyleSheet, Image } from 'react-native';
-
+import { db } from "../config/firebase";
 
 const InfoPessoais = ({ navigation }) => {
     const [altura, setAltura] = useState("");

@@ -1,0 +1,134 @@
+{
+  "usuarios": {
+    "HurJ6r9zGqc9xPm9fP8jxsBw2x52": {
+      "perfil": {
+        "criadoEm": "2025-09-30T01:01:36.462Z",
+        "email": "teste1@gmail.com",
+        "nome": "teste"
+      }
+    },
+    "rKPVya37r6X8e4Cs22c9CBe8yfT2": {
+      "perfil": {
+        "altura": "1,70",
+        "criadoEm": "2025-10-07T13:48:27.937Z",
+        "email": "caio@gmail.com",
+        "idade": "18",
+        "nome": "Caio",
+        "peso": "71"
+      },
+      "metas": {
+        "-Oaz1xHsboqyJjgehw2i": {
+          "ativo": true,
+          "categoria": "Água",
+          "dataCriacao": "2025-10-07T14:20:47.669Z",
+          "periodo": "Semanal",
+          "valor": 23
+        },
+        "-Oaz4LHOo4_3ukmRox7C": {
+          "ativo": true,
+          "categoria": "Água",
+          "dataCriacao": "2025-10-07T14:31:14.324Z",
+          "periodo": "Semanal",
+          "valor": 23
+        },
+        "-Oaz4Ph61DMcjcsfHvVv": {
+          "ativo": true,
+          "categoria": "Caminhada",
+          "dataCriacao": "2025-10-07T14:31:32.476Z",
+          "periodo": "Semanal",
+          "valor": 22
+        },
+        "-Ob-JpliEnWBroSAdwnn": {
+          "ativo": true,
+          "categoria": "Água",
+          "dataCriacao": "2025-10-07T20:18:34.364Z",
+          "periodo": "Semanal",
+          "valor": 40
+        },
+        "-Ob-Ln0-txt0Ei9poMK3": {
+          "ativo": true,
+          "categoria": "Caminhada",
+          "dataCriacao": "2025-10-07T20:27:07.349Z",
+          "periodo": "Semanal",
+          "valor": 3
+        },
+        "-Ob-MteoAFb3ifK65edK": {
+          "ativo": true,
+          "categoria": "Sono",
+          "dataCriacao": "2025-10-07T20:31:56.757Z",
+          "periodo": "Diária",
+          "valor": 2
+        },
+        "-Ob-NvT8pUAgUUzDFWnQ": {
+          "ativo": true,
+          "categoria": "Água",
+          "dataCriacao": "2025-10-07T20:36:26.288Z",
+          "periodo": "Diária",
+          "valor": 2
+        },
+        "-ObShuk67GjdT1vewTuq": {
+          "ativo": true,
+          "categoria": "Água",
+          "dataCriacao": "2025-10-13T13:17:08.132Z",
+          "periodo": "Semanal",
+          "valor": 40
+        }
+      },
+      "contagens": {
+        "2025-10-07": {
+          "agua": 0,
+          "caminhada": 0,
+          "sono": 0
+        },
+        "2025-10-09": {
+          "agua": 0,
+          "caminhada": 0,
+          "sono": 0
+        },
+        "2025-10-13": {
+          "agua": 200,
+          "caminhada": 0,
+          "sono": 0
+        }
+      },
+      "estatisticas": {
+        "agua": {
+          "media": 0,
+          "total": 202,
+          "ultimaAtualizacao": "2025-10-13T13:16:44.820Z"
+        }
+      },
+      "historico": {
+        "agua": {
+          "-Ob-NstacEHqRhQU9fvW": {
+            "data": "2025-10-07",
+            "timestamp": "2025-10-07T20:36:15.608Z",
+            "valor": 2
+          },
+          "-ObShp0Z9Ce0jAQUnR6a": {
+            "data": "2025-10-13",
+            "timestamp": "2025-10-13T13:16:44.505Z",
+            "valor": 200
+          }
+        }
+      }
+    },
+    "xEo6ZODSsAWbJbBauj2VcE4rmF43": {
+      "perfil": {
+        "altura": "0,74",
+        "criadoEm": "2025-10-12T15:25:07.241Z",
+        "email": "veigar123yone@gmail.com",
+        "idade": "40",
+        "nome": "Veigar",
+        "peso": "11"
+      },
+      "contagens": {
+        "2025-10-12": {
+          "agua": 0,
+          "caminhada": 0,
+          "sono": 0
+        }
+      }
+    }
+  }
+}
