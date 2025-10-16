@@ -16,7 +16,7 @@ const novaMeta = ({ navigation, route }) => {
       Alert.alert('Erro', 'Por favor, selecione uma categoria.');
       return;
     }
-    
+
     if (!value || value <= 0) {
       Alert.alert('Erro', 'Por favor, insira um valor maior que 0.');
       return;
@@ -29,11 +29,11 @@ const novaMeta = ({ navigation, route }) => {
 
     try {
       setLoading(true);
-      
+
       // Obtém o usuário autenticado
       const auth = getAuth();
       const user = auth.currentUser;
-      
+
       if (!user) {
         Alert.alert('Erro', 'Usuário não autenticado.');
         setLoading(false);
@@ -52,23 +52,21 @@ const novaMeta = ({ navigation, route }) => {
       // Cria referência para o nó de metas do usuário e adiciona nova meta
       const metasRef = ref(db, `usuarios/${user.uid}/metas`);
       const newMetaRef = push(metasRef);
-      
+
       // Salva no Realtime Database
       await set(newMetaRef, newGoal);
-      
+
       console.log('Meta salva com ID:', newMetaRef.key);
-      
-      Alert.alert(
-        'Sucesso', 
-        `Meta salva: ${value} ${category === 'Água' ? 'L' : category === 'Caminhada' ? 'km' : 'h'} ${period}`,
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Home', { goalSaved: true })
-          }
-        ]
-      );
-      
+
+      // Pass the new goal data back to home screen
+      navigation.navigate('Home', {
+        newGoal: {
+          id: newMetaRef.key,
+          ...newGoal
+        },
+        timeStamp: new Date().getTime() // Force refresh
+      });
+
     } catch (error) {
       console.error('Erro ao salvar meta:', error);
       Alert.alert('Erro', 'Não foi possível salvar a meta. Tente novamente.');
@@ -80,66 +78,66 @@ const novaMeta = ({ navigation, route }) => {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Nova Meta</Text>
-        <Text style={styles.label}>Categoria</Text>
-        <View style={styles.buttonContainer}>
+      <Text style={styles.label}>Categoria</Text>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[styles.categoryButton, category === 'Água' && styles.activeButton]}
+          onPress={() => setCategory('Água')}>
+          <Ionicons name="water-outline" size={20} color="#007AFF" />
+          <Text style={styles.buttonText}>Água</Text>
+          <Text style={styles.subText}>L</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.categoryButton, category === 'Caminhada' && styles.activeButton]}
+          onPress={() => setCategory('Caminhada')}>
+          <Ionicons name="walk-outline" size={20} color="#B91B1B" />
+          <Text style={styles.buttonText}>Caminhada</Text>
+          <Text style={styles.subText}>Km</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.categoryButton, category === 'Sono' && styles.activeButton]}
+          onPress={() => setCategory('Sono')}>
+          <Ionicons name="moon-outline" size={20} color="#099747" />
+          <Text style={styles.buttonText}>Sono</Text>
+          <Text style={styles.subText}>Hr</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.label}>Valor</Text>
+      <TextInput
+        style={styles.input}
+        keyboardType="numeric"
+        value={value}
+        onChangeText={setValue}
+        placeholder="40"
+        placeholderTextColor="#888"
+      />
+      <Text style={styles.label}>Período</Text>
+      <View style={styles.periodContainer}>
+        {['Diária', 'Semanal', 'Mensal', 'Total'].map((p) => (
           <TouchableOpacity
-            style={[styles.categoryButton, category === 'Água' && styles.activeButton]}
-            onPress={() => setCategory('Água')}>
-            <Ionicons name="water-outline" size={20} color="#007AFF" />
-            <Text style={styles.buttonText}>Água</Text>
-            <Text style={styles.subText}>L</Text>
+            key={p}
+            style={[styles.periodButton, period === p && styles.activeButton]}
+            onPress={() => setPeriod(p)}>
+            <Text style={styles.buttonText}>{p}</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.categoryButton, category === 'Caminhada' && styles.activeButton]}
-            onPress={() => setCategory('Caminhada')}>
-            <Ionicons name="walk-outline" size={20} color="#B91B1B" />
-            <Text style={styles.buttonText}>Caminhada</Text>
-            <Text style={styles.subText}>Km</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.categoryButton, category === 'Sono' && styles.activeButton]}
-            onPress={() => setCategory('Sono')}>
-            <Ionicons name="moon-outline" size={20} color="#099747" />
-            <Text style={styles.buttonText}>Sono</Text>
-            <Text style={styles.subText}>Hr</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.label}>Valor</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={value}
-          onChangeText={setValue}
-          placeholder="40"
-          placeholderTextColor="#888"
-        />
-        <Text style={styles.label}>Período</Text>
-        <View style={styles.periodContainer}>
-          {['Diária', 'Semanal', 'Mensal', 'Total'].map((p) => (
-            <TouchableOpacity
-              key={p}
-              style={[styles.periodButton, period === p && styles.activeButton]}
-              onPress={() => setPeriod(p)}>
-              <Text style={styles.buttonText}>{p}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity 
-            style={styles.cancelButton} 
-            onPress={() => navigation.goBack()}
-            disabled={loading}>
-            <Text style={styles.cancelButtonText}>Cancelar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.saveButton} 
-            onPress={saveGoal}
-            disabled={loading}>
-            <Text style={styles.saveBbuttonText}>
-              {loading ? 'Salvando...' : 'Salvar'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        ))}
+      </View>
+      <View style={styles.buttonGroup}>
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() => navigation.goBack()}
+          disabled={loading}>
+          <Text style={styles.cancelButtonText}>Cancelar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={saveGoal}
+          disabled={loading}>
+          <Text style={styles.saveBbuttonText}>
+            {loading ? 'Salvando...' : 'Salvar'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 };
@@ -152,7 +150,7 @@ const styles = StyleSheet.create({
   buttonContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
   categoryButton: { padding: 10, borderRadius: 8, backgroundColor: '#333', flex: 1, alignItems: 'center', marginHorizontal: 5 },
   activeButton: { backgroundColor: '#020202', },
-  buttonText: { color: '#fff', fontSize: 14, fontFamily: 'arial',},
+  buttonText: { color: '#fff', fontSize: 14, fontFamily: 'arial', },
   cancelButtonText: { color: '#FF2D2D', fontSize: 14, fontFamily: 'arial', },
   saveBbuttonText: { color: '#2DFF92', fontSize: 14, fontFamily: 'arial', },
   input: { backgroundColor: '#101010', color: '#FFF', border: '1px solid #FFF', padding: 10, borderRadius: 8, marginBottom: 20 },

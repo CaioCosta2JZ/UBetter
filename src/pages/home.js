@@ -1,13 +1,13 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ref, set, get, push, update, off } from 'firebase/database';
+import { ref, set, get, push, update, off, onValue } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { db } from "../config/firebase";
 
-export default function Home({ route }) {
+export default function Home({ route, navigation }) {
   const [contagemDias, setContagemDias] = useState(0);
   const [contagemAgua, setContagemAgua] = useState(0);
   const [novaQuantidadeAgua, setNovaQuantidadeAgua] = useState('');
@@ -95,38 +95,62 @@ export default function Home({ route }) {
     }
   }, [contagemSono, user]);
 
-  // Função para carregar as metas mais recentes
- useEffect(() => {
-  const carregarMetasRecentes = async () => {
-    if (!user) return;
+  const getMostRecentMeta = async (categoria) => {
+    if (!user) return null;
     try {
       const metasRef = ref(db, `usuarios/${user.uid}/metas`);
       const metasSnapshot = await get(metasRef);
-      if (metasSnapshot.exists()) {
-        const metas = metasSnapshot.val();
-        setMetaAgua(metas.agua || 0);
-        setMetaCaminhada(metas.caminhada || 0);
-        setMetaSono(metas.sono || 0);
-      } else {
-        setMetaAgua(0);
-        setMetaCaminhada(0);
-        setMetaSono(0);
-      }
+
+      if (!metasSnapshot.exists()) return null;
+
+      let metas = [];
+      Object.entries(metasSnapshot.val()).forEach(([id, meta]) => {
+        if (meta.categoria === categoria && meta.ativo) {
+          metas.push({ id, ...meta });
+        }
+      });
+
+      return metas.sort((a, b) =>
+        new Date(b.dataCriacao) - new Date(a.dataCriacao)
+      )[0];
     } catch (error) {
-      console.error('Erro ao carregar metas recentes:', error);
+      console.error('Erro ao buscar meta recente:', error);
+      return null;
     }
   };
-   carregarMetasRecentes();
- }, [
- ]);
- 
+
+  // Função para carregar as metas mais recentes
+  useEffect(() => {
+    const carregarMetasRecentes = async () => {
+      if (!user) return;
+      try {
+        const metasRef = ref(db, `usuarios/${user.uid}/metas`);
+        const metasSnapshot = await get(metasRef);
+        if (metasSnapshot.exists()) {
+          const metas = metasSnapshot.val();
+          setMetaAgua(metas.agua || 0);
+          setMetaCaminhada(metas.caminhada || 0);
+          setMetaSono(metas.sono || 0);
+        } else {
+          setMetaAgua(0);
+          setMetaCaminhada(0);
+          setMetaSono(0);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar metas recentes:', error);
+      }
+    };
+    carregarMetasRecentes();
+  }, [
+  ]);
+
   const carregarDados = async () => {
     if (!user) return;
 
     try {
       const dataAtual = getDataAtual();
 
-      // Carregar contagem diária
+      // Carregar contagens
       const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}`);
       const contagemSnapshot = await get(contagemRef);
 
@@ -137,18 +161,16 @@ export default function Home({ route }) {
         setContagemSono(dados.sono || 0);
       }
 
-      // Carregar metas
-      const metasRef = ref(db, `usuarios/${user.uid}/metas`);
-      const metasSnapshot = await get(metasRef);
+      // Carregar metas mais recentes
+      const metaAgua = await getMostRecentMeta('Água');
+      const metaCaminhada = await getMostRecentMeta('Caminhada');
+      const metaSono = await getMostRecentMeta('Sono');
 
-      if (metasSnapshot.exists()) {
-        const metas = metasSnapshot.val();
-        setMetaAgua(metas.agua || 0);
-        setMetaCaminhada(metas.caminhada || 0);
-        setMetaSono(metas.sono || 0);
-      }
+      setMetaAgua(metaAgua?.valor || 0);
+      setMetaCaminhada(metaCaminhada?.valor || 0);
+      setMetaSono(metaSono?.valor || 0);
 
-      // Carregar contagem de dias
+      // Carregar dias consecutivos
       const diasRef = ref(db, `usuarios/${user.uid}/estatisticas/diasConsecutivos`);
       const diasSnapshot = await get(diasRef);
 
@@ -229,10 +251,27 @@ export default function Home({ route }) {
     }
   };
 
-  // Remove duplicate useEffect for carregarMetasRecentes since it's handled in carregarDados
+  const deletarMeta = async (categoria) => {
+    if (!user) return;
+    try {
+      const meta = await getMostRecentMeta(categoria);
+      if (meta && meta.id) {
+        const metaRef = ref(db, `usuarios/${user.uid}/metas/${meta.id}`);
+        await set(metaRef, { ...meta, ativo: false });
 
-  // Fix verificarMeta to check meta value before deletion
-  const verificarMeta = (valor, meta, tipo) => {
+        // Atualiza estado local
+        switch (categoria) {
+          case 'Água': setMetaAgua(0); break;
+          case 'Caminhada': setMetaCaminhada(0); break;
+          case 'Sono': setMetaSono(0); break;
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao deletar meta:', error);
+    }
+  };
+
+  const verificarMeta = async (valor, meta, tipo) => {
     if (!meta || meta <= 0) return;
     if (valor >= meta) {
       switch (tipo) {
@@ -242,7 +281,7 @@ export default function Home({ route }) {
             setMetaConcluida(`Você concluiu sua meta de ${meta} L de água!`);
             setModalConclusaoVisible(true);
             incrementarDiasConsecutivos();
-            deletarMeta('agua');
+            await deletarMeta('Água');
           }
           break;
         case 'Caminhada':
@@ -251,7 +290,7 @@ export default function Home({ route }) {
             setMetaConcluida(`Você concluiu sua meta de ${meta} km de caminhada!`);
             setModalConclusaoVisible(true);
             incrementarDiasConsecutivos();
-            deletarMeta('caminhada');
+            await deletarMeta('Caminhada');
           }
           break;
         case 'Sono':
@@ -260,25 +299,10 @@ export default function Home({ route }) {
             setMetaConcluida(`Você concluiu sua meta de ${meta} h de sono!`);
             setModalConclusaoVisible(true);
             incrementarDiasConsecutivos();
-            deletarMeta('sono');
+            await deletarMeta('Sono');
           }
           break;
       }
-    }
-  };
-
-  // Função para deletar meta do banco
-  const deletarMeta = async (metaId) => {
-    if (!user) return;
-    try {
-      const metaRef = ref(db, `usuarios/${user.uid}/metas/${metaId}`);
-      await set(metaRef, null);
-      // Atualiza o estado local
-      if (metaId === 'agua') setMetaAgua(0);
-      if (metaId === 'caminhada') setMetaCaminhada(0);
-      if (metaId === 'sono') setMetaSono(0);
-    } catch (error) {
-      console.error('Erro ao deletar meta:', error);
     }
   };
 
@@ -336,6 +360,66 @@ export default function Home({ route }) {
     const progresso = (atual / meta) * 100;
     return Math.min(progresso, 100) + '%';
   };
+
+  // Add listener for real-time updates
+  useEffect(() => {
+    if (!user) return;
+
+    const metasRef = ref(db, `usuarios/${user.uid}/metas`);
+    const unsubscribe = onValue(metasRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const metas = snapshot.val();
+        let mostRecentMetas = {
+          agua: { valor: 0, timestamp: 0 },
+          caminhada: { valor: 0, timestamp: 0 },
+          sono: { valor: 0, timestamp: 0 }
+        };
+
+        // Find most recent active metas
+        Object.entries(metas).forEach(([id, meta]) => {
+          if (meta.ativo) {
+            const timestamp = new Date(meta.dataCriacao).getTime();
+            switch (meta.categoria) {
+              case 'Água':
+                if (timestamp > mostRecentMetas.agua.timestamp) {
+                  mostRecentMetas.agua = { valor: meta.valor, timestamp };
+                }
+                break;
+              case 'Caminhada':
+                if (timestamp > mostRecentMetas.caminhada.timestamp) {
+                  mostRecentMetas.caminhada = { valor: meta.valor, timestamp };
+                }
+                break;
+              case 'Sono':
+                if (timestamp > mostRecentMetas.sono.timestamp) {
+                  mostRecentMetas.sono = { valor: meta.valor, timestamp };
+                }
+                break;
+            }
+          }
+        });
+
+        setMetaAgua(mostRecentMetas.agua.valor);
+        setMetaCaminhada(mostRecentMetas.caminhada.valor);
+        setMetaSono(mostRecentMetas.sono.valor);
+      }
+    });
+
+    // Cleanup listener on unmount
+    return () => {
+      unsubscribe();
+    };
+  }, [user]);
+
+  // Update when coming back to screen
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        carregarDados();
+      }
+      return () => {};
+    }, [user, carregarDados])
+  );
 
   return (
     <ScrollView style={styles.containerHome} showsVerticalScrollIndicator={false}>

@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Text, TextInput, View, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { db } from "../config/firebase";
 import { Text, TextInput, View, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { ref, update } from "firebase/database";
 import { auth, db } from "../config/firebase"; 
