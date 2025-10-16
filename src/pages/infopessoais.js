@@ -1,28 +1,51 @@
 import React, { useState } from "react";
 import { Text, TextInput, View, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { db } from "../config/firebase";
+import { Text, TextInput, View, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { ref, update } from "firebase/database";
+import { auth, db } from "../config/firebase"; 
 
 const InfoPessoais = ({ navigation }) => {
     const [altura, setAltura] = useState("");
     const [peso, setPeso] = useState("");
     const [idade, setIdade] = useState("");
+    const [atividades, setAtividades] = useState(null);
+
 
     const salvarInfoPessoais = () => {
-            // 2. Salvar dados no Realtime Database
-            set(ref(db, "usuarios/" + user.uid), {
-              altura: altura,
-              peso: peso,
-              idade: idade
-            })
-              .then(() => {
-                alert("Sucesso", "Usuário cadastrado com sucesso");
+            const user = auth.currentUser; // Pegar usuário logado
+        
+        // Validar se usuário está autenticado
+        if (!user) {
+            Alert.alert("Erro", "Usuário não autenticado");
+            return;
+        }
+
+        // Validar campos preenchidos
+        if (!altura || !peso || !idade) {
+            Alert.alert("Erro", "Preencha todos os campos");
+            return;
+        }
+
+        // Salvar dados no Realtime Database
+        update(ref(db, "usuarios/" + user.uid), {
+            altura: altura,
+            peso: peso,
+            idade: idade,
+            atividades: atividades
+        })
+            .then(() => {
+                Alert.alert("Sucesso", "Informações salvas com sucesso!");
                 setAltura("");
                 setPeso("");
                 setIdade("");
-              })
-              .catch((error) => {
-                Alert.alert("Erro ao salvar no banco", error.message);
-              });
+                setAtividades(null);
+                navigation.navigate("App");
+            })
+            .catch((error) => {
+                Alert.alert("Erro ao salvar", error.message);
+                console.error("Erro:", error);
+            });
             };
 
     return (
@@ -46,21 +69,33 @@ const InfoPessoais = ({ navigation }) => {
                         onChangeText={setPeso} />
 
                     <Text style={styles.coisa}>Idade</Text>
-                    <TextInput style={styles.input} keyboardType="text" placeholder="Senha" value={idade}
+                    <TextInput style={styles.input} keyboardType="text" placeholder="Sua idade" value={idade}
                         onChangeText={setIdade} />
 
                     <Text style={styles.coisa}>Pratica atividades físicas?</Text>
                     <View style={styles.coisa3}>
-                    <TouchableOpacity style={styles.btnAtv}>
+                    <TouchableOpacity 
+                        style={[
+                            styles.btnAtv, 
+                            atividades === "sim" && styles.btnAtv_ativo
+                        ]}
+                        onPress={() => setAtividades("sim")}
+                    >
                         <Text style={styles.btnsim}>Sim</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.btnAtv}>
+                    <TouchableOpacity 
+                        style={[
+                            styles.btnAtv, 
+                            atividades === "nao" && styles.btnAtv_ativo
+                        ]}
+                        onPress={() => setAtividades("nao")}
+                    >
                         <Text style={styles.btnnao}>Não</Text>
                     </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={styles.botao}>
-                        <Text style={styles.textoBotao} onPress={() => navigation.navigate('App')}>Finalizar</Text>
+                    <TouchableOpacity style={styles.botao} onPress={salvarInfoPessoais}>
+                        <Text style={styles.textoBotao} >Finalizar</Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity>
@@ -180,6 +215,10 @@ const styles = StyleSheet.create({
             borderColor: "white",
             alignSelf: 'center',
         },
+         btnAtv_ativo: {
+        backgroundColor: "#053320",
+        borderColor: "#2DFF92",
+    },
         btnnao:{
             color: 'white',
         },
