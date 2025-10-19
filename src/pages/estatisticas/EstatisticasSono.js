@@ -1,9 +1,172 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
+import { db } from "../../config/firebase";
+import { ref, onValue, set, serverTimestamp, get } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
 
-const SleepScreen = () => (
+const SleepScreen = () => {
+  const [metaSono, setMetaSono] = useState(0);
+  const [contagemSono, setContagemSono] = useState(0);
+  const [sonoSemanal, setSonoSemanal] = useState([]);
+  const [sonoMensal, setSonoMensal] = useState(0);
+  const [sonoTotal, setSonoTotal] = useState(0);
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  // Função para obter a meta mais recente de sono
+  const getMostRecentMeta = async () => {
+    if (!user) return;
+
+    try {
+      const metasRef = ref(db, `usuarios/${user.uid}/metas`);
+      const snapshot = await get(metasRef);
+      
+      let metaMaisRecente = null;
+      
+      if (snapshot.exists()) {
+        const metas = snapshot.val();
+        Object.entries(metas).forEach(([key, meta]) => {
+          if (meta.categoria === 'Sono' && meta.ativo) {
+            if (!metaMaisRecente || new Date(meta.dataCriacao) > new Date(metaMaisRecente.dataCriacao)) {
+              metaMaisRecente = meta;
+            }
+          }
+        });
+      }
+      
+      if (metaMaisRecente) {
+        setMetaSono(metaMaisRecente.valor);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar meta:', error);
+    }
+  };
+
+  // Função para carregar a quantidade de sono do dia
+  const carregarContagemSono = async () => {
+    if (!user) return;
+
+    const dataAtual = new Date().toISOString().split('T')[0];
+    const sonoRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/sono`);
+    
+    onValue(sonoRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setContagemSono(snapshot.val());
+      } else {
+        setContagemSono(0);
+      }
+    });
+  };
+
+  // Função para carregar dados da semana
+  const carregarDadosSemana = async () => {
+    if (!user) return;
+
+    const hoje = new Date();
+    const dadosSemana = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const data = new Date(hoje);
+      data.setDate(data.getDate() - i);
+      const dataFormatada = data.toISOString().split('T')[0];
+      
+      const sonoRef = ref(db, `usuarios/${user.uid}/contagens/${dataFormatada}`);
+      const snapshot = await get(sonoRef);
+      
+      const valorSono = snapshot.exists() && snapshot.val().sono ? snapshot.val().sono : 0;
+      
+      dadosSemana.push({
+        label: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'][data.getDay()],
+        height: valorSono > 0 ? (valorSono / metaSono) * 100 : 0,
+        value: valorSono
+      });
+    }
+    
+    setSonoSemanal(dadosSemana);
+  };
+
+  // Função para carregar dados do mês
+  const carregarDadosMes = async () => {
+    if (!user) return;
+
+    const hoje = new Date();
+    const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    let totalMes = 0;
+
+    // Lê os dados das contagens diárias
+    const contagensRef = ref(db, `usuarios/${user.uid}/contagens`);
+    const snapshot = await get(contagensRef);
+
+    if (snapshot.exists()) {
+      const dados = snapshot.val();
+      Object.entries(dados).forEach(([data, valores]) => {
+        const dataRegistro = new Date(data);
+        if (dataRegistro >= primeiroDiaMes && dataRegistro <= ultimoDiaMes && valores.sono) {
+          totalMes += valores.sono;
+        }
+      });
+    }
+
+    setSonoMensal(totalMes);
+  };
+
+  // Função para carregar total histórico
+  const carregarTotal = async () => {
+    if (!user) return;
+
+    const contagensRef = ref(db, `usuarios/${user.uid}/contagens`);
+    const snapshot = await get(contagensRef);
+    let total = 0;
+
+    if (snapshot.exists()) {
+      const dados = snapshot.val();
+      Object.values(dados).forEach(valores => {
+        if (valores.sono) {
+          total += valores.sono;
+        }
+      });
+    }
+
+    setSonoTotal(total);
+  };
+
+  // Função para adicionar sono
+  const adicionarSono = async () => {
+    if (!user) return;
+
+    const dataAtual = new Date().toISOString().split('T')[0];
+    const novoValor = contagemSono + 1; // Adiciona 1 hora
+    
+    try {
+      // Salvar contagem diária
+      const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/sono`);
+      await set(contagemRef, novoValor);
+
+      // Atualizar estado local
+      setContagemSono(novoValor);
+    } catch (error) {
+      console.error('Erro ao adicionar sono:', error);
+    }
+  };
+
+  useEffect(() => {
+    getMostRecentMeta();
+    carregarContagemSono();
+    carregarDadosSemana();
+    carregarDadosMes();
+    carregarTotal();
+  }, [user]);
+
+  useEffect(() => {
+    if (metaSono > 0) {
+      carregarDadosSemana();
+    }
+  }, [metaSono]);
+
+  return (
   <ScrollView showsVerticalScrollIndicator={false} style={{ padding: 20 }}>
     {/* Card - Sono hoje */}
     <View style={styles.card}>
@@ -14,13 +177,13 @@ const SleepScreen = () => (
         </View>
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.valueText}>6h</Text>
-        <Text style={styles.targetText}>de 8h</Text>
+        <Text style={styles.valueText}>{contagemSono}h</Text>
+        <Text style={styles.targetText}>de {metaSono}h</Text>
       </View>
       <View style={styles.progressBar}>
-        <View style={[styles.progressFill, { width: '75%' }]} />
+        <View style={[styles.progressFill, { width: `${(contagemSono / metaSono) * 100}%` }]} />
       </View>
-      <TouchableOpacity style={styles.addButton}>
+      <TouchableOpacity style={styles.addButton} onPress={adicionarSono}>
         <Ionicons name="add-outline" size={24} color="#099747" />
       </TouchableOpacity>
     </View>
@@ -33,38 +196,33 @@ const SleepScreen = () => (
           <Ionicons name="moon-outline" size={24} color="#045125" />
         </View>
       </View>
-      <Text style={styles.weeklyTotalConsumption}>32h</Text>
+      <Text style={styles.weeklyTotalConsumption}>
+        {sonoSemanal.reduce((total, dia) => total + dia.value, 0)}h
+      </Text>
       <View style={styles.barChartContainer}>
-        {[
-          { label: 'S', height: 40 },
-          { label: 'T', height: 60 },
-          { label: 'Q', height: 30 },
-          { label: 'Q', height: 80 },
-          { label: 'S', height: 70 },
-          { label: 'S', height: 20 },
-          { label: 'D', height: 50 },
-        ].map((bar, index) => (
+        {sonoSemanal.map((bar, index) => (
           <View key={index} style={styles.barWrapper}>
-            <View style={[styles.bar, { height: bar.height }]} />
+            <View style={[styles.bar, { height: Math.min(bar.height, 100) }]} />
             <Text style={styles.barLabel}>{bar.label}</Text>
           </View>
         ))}
       </View>
       <View style={styles.dailyListContainer}>
-        {[
-          { day: 'Segunda', amount: '6h' },
-          { day: 'Terça', amount: '7h' },
-          { day: 'Quarta', amount: '5h' },
-          { day: 'Quinta', amount: '8h' },
-          { day: 'Sexta', amount: '7h' },
-          { day: 'Sábado', amount: '4h' },
-          { day: 'Domingo (hoje)', amount: '6h' },
-        ].map((item, index) => (
-          <View key={index} style={styles.dailyListItem}>
-            <Text style={styles.dailyListDay}>{item.day}</Text>
-            <Text style={styles.dailyListAmount}>{item.amount}</Text>
-          </View>
-        ))}
+        {sonoSemanal.map((item, index) => {
+          const hoje = new Date();
+          const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+          const diaIndex = (hoje.getDay() - (6 - index) + 7) % 7;
+          const ehHoje = index === 6;
+          
+          return (
+            <View key={index} style={styles.dailyListItem}>
+              <Text style={styles.dailyListDay}>
+                {`${dias[diaIndex]}${ehHoje ? ' (hoje)' : ''}`}
+              </Text>
+              <Text style={styles.dailyListAmount}>{item.value}h</Text>
+            </View>
+          );
+        })}
       </View>
     </View>
 
@@ -77,11 +235,8 @@ const SleepScreen = () => (
         </View>
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.valueText}>8h por noite</Text>
+        <Text style={styles.valueText}>{metaSono}h por noite</Text>
       </View>
-      <TouchableOpacity style={styles.addButton}>
-        <Ionicons name="add-outline" size={24} color="#099747" />
-      </TouchableOpacity>
     </View>
 
     {/* Card - Sono no último mês */}
@@ -93,11 +248,8 @@ const SleepScreen = () => (
         </View>
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.valueText}>50h</Text>
+        <Text style={styles.valueText}>{sonoMensal}h</Text>
       </View>
-      <TouchableOpacity style={styles.addButton}>
-        <Ionicons name="add-outline" size={24} color="#099747" />
-      </TouchableOpacity>
     </View>
 
     {/* Card - Sono desde o início */}
@@ -109,14 +261,12 @@ const SleepScreen = () => (
         </View>
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.valueText}>120h</Text>
+        <Text style={styles.valueText}>{sonoTotal}h</Text>
       </View>
-      <TouchableOpacity style={styles.addButton}>
-        <Ionicons name="add-outline" size={24} color="#099747" />
-      </TouchableOpacity>
     </View>
   </ScrollView>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   card: {

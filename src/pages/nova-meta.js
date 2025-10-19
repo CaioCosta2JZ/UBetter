@@ -85,7 +85,7 @@ const novaMeta = ({ navigation, route }) => {
           onPress={() => setCategory('Água')}>
           <Ionicons name="water-outline" size={20} color="#007AFF" />
           <Text style={styles.buttonText}>Água</Text>
-          <Text style={styles.subText}>L</Text>
+          <Text style={styles.subText}>ml</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.categoryButton, category === 'Caminhada' && styles.activeButton]}

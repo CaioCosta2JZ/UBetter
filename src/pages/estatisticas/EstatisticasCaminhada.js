@@ -1,9 +1,172 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
+import { db } from "../../config/firebase";
+import { ref, onValue, set, serverTimestamp, get } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
 
-const WalkScreen = () => (
+const WalkScreen = () => {
+  const [metaCaminhada, setMetaCaminhada] = useState(0);
+  const [contagemCaminhada, setContagemCaminhada] = useState(0);
+  const [caminhadaSemanal, setCaminhadaSemanal] = useState([]);
+  const [caminhadaMensal, setCaminhadaMensal] = useState(0);
+  const [caminhadaTotal, setCaminhadaTotal] = useState(0);
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  // Função para obter a meta mais recente de caminhada
+  const getMostRecentMeta = async () => {
+    if (!user) return;
+
+    try {
+      const metasRef = ref(db, `usuarios/${user.uid}/metas`);
+      const snapshot = await get(metasRef);
+      
+      let metaMaisRecente = null;
+      
+      if (snapshot.exists()) {
+        const metas = snapshot.val();
+        Object.entries(metas).forEach(([key, meta]) => {
+          if (meta.categoria === 'Caminhada' && meta.ativo) {
+            if (!metaMaisRecente || new Date(meta.dataCriacao) > new Date(metaMaisRecente.dataCriacao)) {
+              metaMaisRecente = meta;
+            }
+          }
+        });
+      }
+      
+      if (metaMaisRecente) {
+        setMetaCaminhada(metaMaisRecente.valor);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar meta:', error);
+    }
+  };
+
+  // Função para carregar a quantidade de caminhada do dia
+  const carregarContagemCaminhada = async () => {
+    if (!user) return;
+
+    const dataAtual = new Date().toISOString().split('T')[0];
+    const caminhadaRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/caminhada`);
+    
+    onValue(caminhadaRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setContagemCaminhada(snapshot.val());
+      } else {
+        setContagemCaminhada(0);
+      }
+    });
+  };
+
+  // Função para carregar dados da semana
+  const carregarDadosSemana = async () => {
+    if (!user) return;
+
+    const hoje = new Date();
+    const dadosSemana = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const data = new Date(hoje);
+      data.setDate(data.getDate() - i);
+      const dataFormatada = data.toISOString().split('T')[0];
+      
+      const caminhadaRef = ref(db, `usuarios/${user.uid}/contagens/${dataFormatada}`);
+      const snapshot = await get(caminhadaRef);
+      
+      const valorCaminhada = snapshot.exists() && snapshot.val().caminhada ? snapshot.val().caminhada : 0;
+      
+      dadosSemana.push({
+        label: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'][data.getDay()],
+        height: valorCaminhada > 0 ? (valorCaminhada / metaCaminhada) * 100 : 0,
+        value: valorCaminhada
+      });
+    }
+    
+    setCaminhadaSemanal(dadosSemana);
+  };
+
+  // Função para carregar dados do mês
+  const carregarDadosMes = async () => {
+    if (!user) return;
+
+    const hoje = new Date();
+    const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    let totalMes = 0;
+
+    // Lê os dados das contagens diárias
+    const contagensRef = ref(db, `usuarios/${user.uid}/contagens`);
+    const snapshot = await get(contagensRef);
+
+    if (snapshot.exists()) {
+      const dados = snapshot.val();
+      Object.entries(dados).forEach(([data, valores]) => {
+        const dataRegistro = new Date(data);
+        if (dataRegistro >= primeiroDiaMes && dataRegistro <= ultimoDiaMes && valores.caminhada) {
+          totalMes += valores.caminhada;
+        }
+      });
+    }
+
+    setCaminhadaMensal(totalMes);
+  };
+
+  // Função para carregar total histórico
+  const carregarTotal = async () => {
+    if (!user) return;
+
+    const contagensRef = ref(db, `usuarios/${user.uid}/contagens`);
+    const snapshot = await get(contagensRef);
+    let total = 0;
+
+    if (snapshot.exists()) {
+      const dados = snapshot.val();
+      Object.values(dados).forEach(valores => {
+        if (valores.caminhada) {
+          total += valores.caminhada;
+        }
+      });
+    }
+
+    setCaminhadaTotal(total);
+  };
+
+  // Função para adicionar caminhada
+  const adicionarCaminhada = async () => {
+    if (!user) return;
+
+    const dataAtual = new Date().toISOString().split('T')[0];
+    const novoValor = contagemCaminhada + 1; // Adiciona 1km
+    
+    try {
+      // Salvar contagem diária
+      const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/caminhada`);
+      await set(contagemRef, novoValor);
+
+      // Atualizar estado local
+      setContagemCaminhada(novoValor);
+    } catch (error) {
+      console.error('Erro ao adicionar caminhada:', error);
+    }
+  };
+
+  useEffect(() => {
+    getMostRecentMeta();
+    carregarContagemCaminhada();
+    carregarDadosSemana();
+    carregarDadosMes();
+    carregarTotal();
+  }, [user]);
+
+  useEffect(() => {
+    if (metaCaminhada > 0) {
+      carregarDadosSemana();
+    }
+  }, [metaCaminhada]);
+
+  return (
   <ScrollView showsVerticalScrollIndicator={false} style={{ padding: 20 }}>
 
     {/*Card - Caminhada feita hoje*/}
@@ -15,13 +178,13 @@ const WalkScreen = () => (
         </View>
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.valueText}>20km</Text>
-        <Text style={styles.targetText}>de 40km</Text>
+        <Text style={styles.valueText}>{contagemCaminhada}km</Text>
+        <Text style={styles.targetText}>de {metaCaminhada}km</Text>
       </View>
       <View style={styles.progressBar}>
-        <View style={[styles.progressFill, { width: '50%' }]} />
+        <View style={[styles.progressFill, { width: `${(contagemCaminhada / metaCaminhada) * 100}%` }]} />
       </View>
-      <TouchableOpacity style={styles.addButton}>
+      <TouchableOpacity style={styles.addButton} onPress={adicionarCaminhada}>
         <Ionicons name="add-outline" size={24} color="#B91B1B" />
       </TouchableOpacity>
     </View>
@@ -34,38 +197,33 @@ const WalkScreen = () => (
           <Ionicons name="walk-outline" size={24} color="#B91B1B" />
         </View>
       </View>
-      <Text style={styles.weeklyTotalConsumption}>10km</Text>
+      <Text style={styles.weeklyTotalConsumption}>
+        {caminhadaSemanal.reduce((total, dia) => total + dia.value, 0)}km
+      </Text>
       <View style={styles.barChartContainer}>
-        {[
-          { label: 'S', height: 40 },
-          { label: 'T', height: 70 },
-          { label: 'Q', height: 20 },
-          { label: 'Q', height: 90 },
-          { label: 'S', height: 75 },
-          { label: 'S', height: 30 },
-          { label: 'D', height: 50 },
-        ].map((bar, index) => (
+        {caminhadaSemanal.map((bar, index) => (
           <View key={index} style={styles.barWrapper}>
-            <View style={[styles.bar, { height: bar.height }]} />
+            <View style={[styles.bar, { height: Math.min(bar.height, 100) }]} />
             <Text style={styles.barLabel}>{bar.label}</Text>
           </View>
         ))}
       </View>
       <View style={styles.dailyListContainer}>
-        {[
-          { day: 'Segunda', amount: '20km' },
-          { day: 'Terça', amount: '20km' },
-          { day: 'Quarta', amount: '20km' },
-          { day: 'Quinta', amount: '20km' },
-          { day: 'Sexta', amount: '20km' },
-          { day: 'Sábado', amount: '20km' },
-          { day: 'Domingo (hoje)', amount: '20km' },
-        ].map((item, index) => (
-          <View key={index} style={styles.dailyListItem}>
-            <Text style={styles.dailyListDay}>{item.day}</Text>
-            <Text style={styles.dailyListAmount}>{item.amount}</Text>
-          </View>
-        ))}
+        {caminhadaSemanal.map((item, index) => {
+          const hoje = new Date();
+          const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+          const diaIndex = (hoje.getDay() - (6 - index) + 7) % 7;
+          const ehHoje = index === 6;
+          
+          return (
+            <View key={index} style={styles.dailyListItem}>
+              <Text style={styles.dailyListDay}>
+                {`${dias[diaIndex]}${ehHoje ? ' (hoje)' : ''}`}
+              </Text>
+              <Text style={styles.dailyListAmount}>{item.value}km</Text>
+            </View>
+          );
+        })}
       </View>
     </View>
 
@@ -78,11 +236,8 @@ const WalkScreen = () => (
         </View>
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.valueText}>20km Diários</Text>
+        <Text style={styles.valueText}>{metaCaminhada}km Diários</Text>
       </View>
-      <TouchableOpacity style={styles.addButton}>
-        <Ionicons name="add-outline" size={24} color="#B91B1B" />
-      </TouchableOpacity>
     </View>
 
     {/*Card - Caminhada feita no ultimo mês*/}
@@ -94,11 +249,8 @@ const WalkScreen = () => (
         </View>
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.valueText}>100km</Text>
+        <Text style={styles.valueText}>{caminhadaMensal}km</Text>
       </View>
-      <TouchableOpacity style={styles.addButton}>
-        <Ionicons name="add-outline" size={24} color="#B91B1B" />
-      </TouchableOpacity>
     </View>
 
     {/*Card - Caminhada feita desde o início*/}
@@ -110,15 +262,13 @@ const WalkScreen = () => (
         </View>
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.valueText}>2000km</Text>
+        <Text style={styles.valueText}>{caminhadaTotal}km</Text>
       </View>
-      <TouchableOpacity style={styles.addButton}>
-        <Ionicons name="add-outline" size={24} color="#B91B1B" />
-      </TouchableOpacity>
     </View>
 
   </ScrollView>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   card: {

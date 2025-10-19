@@ -35,12 +35,39 @@ export default function Home({ route, navigation }) {
     const data = new Date();
     return data.toISOString().split('T')[0];
   };
-
-  // Carregar dados do usuário ao iniciar
-  useEffect(() => {
+useEffect(() => {
     if (user) {
       carregarDados();
     }
+  }, [user]);
+  
+  // Inicializar dados do dia
+  const inicializarDadosDoDia = async () => {
+    if (!user) return;
+    
+    const dataAtual = getDataAtual();
+    const contagensRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}`);
+    
+    try {
+      const snapshot = await get(contagensRef);
+      console.log('[DEBUG] inicializarDadosDoDia', { uid: user.uid, dataAtual, exists: snapshot.exists(), val: snapshot.exists() ? snapshot.val() : null });
+      if (!snapshot.exists()) {
+        await set(contagensRef, {
+          agua: 0,
+          caminhada: 0,
+          sono: 0
+        });
+        console.log('[DEBUG] inicializarDadosDoDia: criado nó contagens do dia', { uid: user.uid, dataAtual });
+      }
+    } catch (error) {
+      console.error('Erro ao inicializar dados do dia:', error);
+    }
+  };
+
+  // Inicializar dados do dia ao detectar usuário (carregarDados será chamado por outros listeners)
+  useEffect(() => {
+    if (!user) return;
+    inicializarDadosDoDia();
   }, [user]);
 
   // Atualizar metas quando receber nova meta
@@ -64,36 +91,10 @@ export default function Home({ route, navigation }) {
     }
   }, [route.params?.newGoal]);
 
-  // Atualiza no banco sempre que contagemDias muda
-  useEffect(() => {
-    if (user) {
-      const dataAtual = getDataAtual();
-      const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/agua`);
-      set(contagemRef, contagemAgua).catch(error =>
-        console.error('Erro ao atualizar contagem água:', error)
-      );
-    }
-  }, [contagemAgua, user]);
-
-  useEffect(() => {
-    if (user) {
-      const dataAtual = getDataAtual();
-      const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/caminhada`);
-      set(contagemRef, contagemCaminhada).catch(error =>
-        console.error('Erro ao atualizar contagem caminhada:', error)
-      );
-    }
-  }, [contagemCaminhada, user]);
-
-  useEffect(() => {
-    if (user) {
-      const dataAtual = getDataAtual();
-      const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/sono`);
-      set(contagemRef, contagemSono).catch(error =>
-        console.error('Erro ao atualizar contagem sono:', error)
-      );
-    }
-  }, [contagemSono, user]);
+  // As atualizações das contagens diárias agora são feitas pelas funções
+  // `adicionarAgua`, `adicionarCaminhada` e `adicionarSono`, que leem/atualizam
+  // o objeto completo `contagens/{dataAtual}`. Removemos efeitos que
+  // gravavam campos isolados para evitar sobrescritas parciais.
 
   const getMostRecentMeta = async (categoria) => {
     if (!user) return null;
@@ -103,16 +104,20 @@ export default function Home({ route, navigation }) {
 
       if (!metasSnapshot.exists()) return null;
 
-      let metas = [];
+      let metaMaisRecente = null;
+      let timestampMaisRecente = 0;
+
       Object.entries(metasSnapshot.val()).forEach(([id, meta]) => {
         if (meta.categoria === categoria && meta.ativo) {
-          metas.push({ id, ...meta });
+          const timestamp = new Date(meta.dataCriacao).getTime();
+          if (timestamp > timestampMaisRecente) {
+            timestampMaisRecente = timestamp;
+            metaMaisRecente = { id, ...meta };
+          }
         }
       });
 
-      return metas.sort((a, b) =>
-        new Date(b.dataCriacao) - new Date(a.dataCriacao)
-      )[0];
+      return metaMaisRecente;
     } catch (error) {
       console.error('Erro ao buscar meta recente:', error);
       return null;
@@ -141,8 +146,7 @@ export default function Home({ route, navigation }) {
       }
     };
     carregarMetasRecentes();
-  }, [
-  ]);
+  }, [user]);
 
   const carregarDados = async () => {
     if (!user) return;
@@ -150,25 +154,40 @@ export default function Home({ route, navigation }) {
     try {
       const dataAtual = getDataAtual();
 
-      // Carregar contagens
+      // Carregar contagens do dia atual
       const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}`);
       const contagemSnapshot = await get(contagemRef);
 
       if (contagemSnapshot.exists()) {
         const dados = contagemSnapshot.val();
-        setContagemAgua(dados.agua || 0);
-        setContagemCaminhada(dados.caminhada || 0);
-        setContagemSono(dados.sono || 0);
+        console.log('[DEBUG] carregarDados - contagens existentes', { uid: user.uid, dataAtual, dados });
+        if (dados.agua !== undefined) setContagemAgua(dados.agua);
+        if (dados.caminhada !== undefined) setContagemCaminhada(dados.caminhada);
+        if (dados.sono !== undefined) setContagemSono(dados.sono);
+      } else {
+        // Se não existirem dados para o dia atual, inicializa com zero
+        const novosDados = {
+          agua: 0,
+          caminhada: 0,
+          sono: 0
+        };
+        await set(contagemRef, novosDados);
+        console.log('[DEBUG] carregarDados - inicializou contagens do dia', { uid: user.uid, dataAtual });
+        setContagemAgua(0);
+        setContagemCaminhada(0);
+        setContagemSono(0);
       }
 
       // Carregar metas mais recentes
-      const metaAgua = await getMostRecentMeta('Água');
-      const metaCaminhada = await getMostRecentMeta('Caminhada');
-      const metaSono = await getMostRecentMeta('Sono');
+      const metasRef = ref(db, `usuarios/${user.uid}/metas`);
+      const metasSnapshot = await get(metasRef);
 
-      setMetaAgua(metaAgua?.valor || 0);
-      setMetaCaminhada(metaCaminhada?.valor || 0);
-      setMetaSono(metaSono?.valor || 0);
+      if (metasSnapshot.exists()) {
+        const metas = metasSnapshot.val();
+        setMetaAgua(metas.agua || 0);
+        setMetaCaminhada(metas.caminhada || 0);
+        setMetaSono(metas.sono || 0);
+      }
 
       // Carregar dias consecutivos
       const diasRef = ref(db, `usuarios/${user.uid}/estatisticas/diasConsecutivos`);
@@ -205,15 +224,21 @@ export default function Home({ route, navigation }) {
       const dataAtual = getDataAtual();
       const timestamp = new Date().toISOString();
 
-      // Salvar contagem diária
+      // Obter o valor atual antes de atualizar
       const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/${tipo}`);
-      await set(contagemRef, novoValor);
+      const snapshot = await get(contagemRef);
+      const valorAtual = snapshot.exists() ? snapshot.val() : 0;
+      const valorTotal = valorAtual + novoValor;
+
+      // Salvar contagem diária atualizada
+      await set(contagemRef, valorTotal);
 
       // Salvar histórico para estatísticas
       const historicoRef = ref(db, `usuarios/${user.uid}/historico/${tipo}`);
       const novoRegistro = push(historicoRef);
       await set(novoRegistro, {
         valor: novoValor,
+        total: valorTotal,
         data: dataAtual,
         timestamp: timestamp
       });
@@ -319,39 +344,128 @@ export default function Home({ route, navigation }) {
     }
   };
 
-  const adicionarAgua = () => {
+  const adicionarAgua = async () => {
     const quantidade = parseFloat(novaQuantidadeAgua);
     if (!isNaN(quantidade)) {
-      const novoValor = contagemAgua + quantidade;
-      setContagemAgua(novoValor);
-      setNovaQuantidadeAgua('');
-      setModalAguaVisible(false);
-      salvarContagem('agua', quantidade);
-      verificarMeta(novoValor, metaAgua, 'Água');
+      const dataAtual = getDataAtual();
+      
+      try {
+        // Primeiro, busca o valor atual
+        const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}/agua`);
+        const snapshot = await get(contagemRef);
+        const valorAtual = snapshot.exists() ? snapshot.val() : 0;
+        console.log('[DEBUG] adicionarAgua - leitura antes', { uid: user.uid, dataAtual, valorAtual, quantidade });
+        
+        // Calcula o novo valor
+        const novoValor = valorAtual + quantidade;
+        
+        // Atualiza a contagem do dia
+        await set(contagemRef, novoValor);
+        console.log('[DEBUG] adicionarAgua - gravou contagem', { uid: user.uid, dataAtual, novoValor });
+        
+        // Atualiza o histórico
+        const historicoRef = push(ref(db, `usuarios/${user.uid}/historico/agua`));
+        await set(historicoRef, {
+          data: dataAtual,
+          timestamp: new Date().toISOString(),
+          valor: quantidade,
+          totalDia: novoValor
+        });
+        
+        // Atualiza estatísticas
+        const estatisticasRef = ref(db, `usuarios/${user.uid}/estatisticas/agua`);
+        const estatisticasSnapshot = await get(estatisticasRef);
+        const totalAnterior = estatisticasSnapshot.exists() ? estatisticasSnapshot.val().total || 0 : 0;
+        
+        await set(estatisticasRef, {
+          total: totalAnterior + quantidade,
+          ultimaAtualizacao: new Date().toISOString()
+        });
+        console.log('[DEBUG] adicionarAgua - estatisticas atualizadas', { uid: user.uid, totalAnterior, incremento: quantidade });
+        
+        setContagemAgua(novoValor);
+        setNovaQuantidadeAgua('');
+        setModalAguaVisible(false);
+        verificarMeta(novoValor, metaAgua, 'Água');
+      } catch (error) {
+        console.error('Erro ao adicionar água:', error);
+      }
     }
   };
 
-  const adicionarCaminhada = () => {
+  const adicionarCaminhada = async () => {
     const quantidade = parseFloat(novaQuantidadeCaminhada);
     if (!isNaN(quantidade)) {
-      const novoValor = contagemCaminhada + quantidade;
-      setContagemCaminhada(novoValor);
-      setNovaQuantidadeCaminhada('');
-      setModalCaminhadaVisible(false);
-      salvarContagem('caminhada', quantidade);
-      verificarMeta(novoValor, metaCaminhada, 'Caminhada');
+      const dataAtual = getDataAtual();
+      try {
+  // Ler dados do dia
+  const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}`);
+  const snapshot = await get(contagemRef);
+  const dadosAtuais = snapshot.exists() ? snapshot.val() : { agua: 0, caminhada: 0, sono: 0 };
+  console.log('[DEBUG] adicionarCaminhada - leitura antes', { uid: user.uid, dataAtual, dadosAtuais, quantidade });
+
+  // Calcular novo valor
+  const novoValor = (dadosAtuais.caminhada || 0) + quantidade;
+
+        // Atualiza a contagem do dia
+        await set(contagemRef, { ...dadosAtuais, caminhada: novoValor });
+
+        // Atualiza o histórico
+        const historicoRef = push(ref(db, `usuarios/${user.uid}/historico/caminhada`));
+        await set(historicoRef, { data: dataAtual, timestamp: new Date().toISOString(), valor: quantidade, totalDia: novoValor });
+        console.log('[DEBUG] adicionarCaminhada - gravou historico e contagem', { uid: user.uid, dataAtual, novoValor });
+
+        // Atualiza estatísticas
+        const estatisticasRef = ref(db, `usuarios/${user.uid}/estatisticas/caminhada`);
+        const estatisticasSnapshot = await get(estatisticasRef);
+        const totalAnterior = estatisticasSnapshot.exists() ? estatisticasSnapshot.val().total || 0 : 0;
+        await set(estatisticasRef, { total: totalAnterior + quantidade, ultimaAtualizacao: new Date().toISOString() });
+
+        setContagemCaminhada(novoValor);
+        setNovaQuantidadeCaminhada('');
+        setModalCaminhadaVisible(false);
+        verificarMeta(novoValor, metaCaminhada, 'Caminhada');
+      } catch (error) {
+        console.error('Erro ao adicionar caminhada:', error);
+      }
     }
   };
 
-  const adicionarSono = () => {
+  const adicionarSono = async () => {
     const quantidade = parseFloat(novaQuantidadeSono);
     if (!isNaN(quantidade)) {
-      const novoValor = contagemSono + quantidade;
-      setContagemSono(novoValor);
-      setNovaQuantidadeSono('');
-      setModalSonoVisible(false);
-      salvarContagem('sono', quantidade);
-      verificarMeta(novoValor, metaSono, 'Sono');
+      const dataAtual = getDataAtual();
+      try {
+        // Ler dados do dia
+        const contagemRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}`);
+        const snapshot = await get(contagemRef);
+        const dadosAtuais = snapshot.exists() ? snapshot.val() : { agua: 0, caminhada: 0, sono: 0 };
+        console.log('[DEBUG] adicionarSono - leitura antes', { uid: user.uid, dataAtual, dadosAtuais, quantidade });
+
+        // Calcular novo valor
+        const novoValor = (dadosAtuais.sono || 0) + quantidade;
+
+        // Atualiza a contagem do dia
+        await set(contagemRef, { ...dadosAtuais, sono: novoValor });
+
+        // Atualiza o histórico
+        const historicoRef = push(ref(db, `usuarios/${user.uid}/historico/sono`));
+        await set(historicoRef, { data: dataAtual, timestamp: new Date().toISOString(), valor: quantidade, totalDia: novoValor });
+        console.log('[DEBUG] adicionarSono - gravou historico e contagem', { uid: user.uid, dataAtual, novoValor });
+
+        // Atualiza estatísticas
+        const estatisticasRef = ref(db, `usuarios/${user.uid}/estatisticas/sono`);
+        const estatisticasSnapshot = await get(estatisticasRef);
+        const totalAnterior = estatisticasSnapshot.exists() ? estatisticasSnapshot.val().total || 0 : 0;
+        await set(estatisticasRef, { total: totalAnterior + quantidade, ultimaAtualizacao: new Date().toISOString() });
+
+        setContagemSono(novoValor);
+        setNovaQuantidadeSono('');
+        setModalSonoVisible(false);
+        verificarMeta(novoValor, metaSono, 'Sono');
+      } catch (error) {
+        console.error('Erro ao adicionar sono:', error);
+      }
     }
   };
 
@@ -361,53 +475,68 @@ export default function Home({ route, navigation }) {
     return Math.min(progresso, 100) + '%';
   };
 
-  // Add listener for real-time updates
+  // Add listeners for real-time updates
   useEffect(() => {
     if (!user) return;
 
+    const dataAtual = getDataAtual();
+
+    // Listener para o nó de contagens do dia (objetos completos)
+    const contagensRef = ref(db, `usuarios/${user.uid}/contagens/${dataAtual}`);
+    const unsubscribeContagens = onValue(contagensRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const dados = snapshot.val();
+        try {
+          console.log('[DEBUG] listener contagens onValue', { uid: user.uid, dataAtual, dados: JSON.stringify(dados) });
+        } catch (e) {
+          console.log('[DEBUG] listener contagens onValue (stringify failed)', { uid: user.uid, dataAtual, dados });
+        }
+        setContagemAgua(dados.agua || 0);
+        setContagemCaminhada(dados.caminhada || 0);
+        setContagemSono(dados.sono || 0);
+      } else {
+        console.log('[DEBUG] listener contagens onValue - sem dados, inicializando', { uid: user.uid, dataAtual });
+        // inicializar se necessário
+        set(contagensRef, { agua: 0, caminhada: 0, sono: 0 }).catch(() => {});
+        setContagemAgua(0);
+        setContagemCaminhada(0);
+        setContagemSono(0);
+      }
+  // Não chamar carregarDados() aqui — listener já atualiza estado local.
+    });
+
+    // Listener para metas (manter metas sincronizadas)
     const metasRef = ref(db, `usuarios/${user.uid}/metas`);
-    const unsubscribe = onValue(metasRef, (snapshot) => {
+    const unsubscribeMetas = onValue(metasRef, (snapshot) => {
       if (snapshot.exists()) {
         const metas = snapshot.val();
-        let mostRecentMetas = {
-          agua: { valor: 0, timestamp: 0 },
-          caminhada: { valor: 0, timestamp: 0 },
-          sono: { valor: 0, timestamp: 0 }
-        };
-
-        // Find most recent active metas
+        try {
+          console.log('[DEBUG] listener metas onValue', { uid: user.uid, count: Object.keys(metas).length, metas: JSON.stringify(metas) });
+        } catch (e) {
+          console.log('[DEBUG] listener metas onValue (stringify failed)', { uid: user.uid, count: Object.keys(metas).length });
+        }
+        let mostRecentMetas = { agua: { valor: 0, timestamp: 0 }, caminhada: { valor: 0, timestamp: 0 }, sono: { valor: 0, timestamp: 0 } };
         Object.entries(metas).forEach(([id, meta]) => {
           if (meta.ativo) {
             const timestamp = new Date(meta.dataCriacao).getTime();
             switch (meta.categoria) {
-              case 'Água':
-                if (timestamp > mostRecentMetas.agua.timestamp) {
-                  mostRecentMetas.agua = { valor: meta.valor, timestamp };
-                }
-                break;
-              case 'Caminhada':
-                if (timestamp > mostRecentMetas.caminhada.timestamp) {
-                  mostRecentMetas.caminhada = { valor: meta.valor, timestamp };
-                }
-                break;
-              case 'Sono':
-                if (timestamp > mostRecentMetas.sono.timestamp) {
-                  mostRecentMetas.sono = { valor: meta.valor, timestamp };
-                }
-                break;
+              case 'Água': if (timestamp > mostRecentMetas.agua.timestamp) mostRecentMetas.agua = { valor: meta.valor, timestamp }; break;
+              case 'Caminhada': if (timestamp > mostRecentMetas.caminhada.timestamp) mostRecentMetas.caminhada = { valor: meta.valor, timestamp }; break;
+              case 'Sono': if (timestamp > mostRecentMetas.sono.timestamp) mostRecentMetas.sono = { valor: meta.valor, timestamp }; break;
             }
           }
         });
-
         setMetaAgua(mostRecentMetas.agua.valor);
         setMetaCaminhada(mostRecentMetas.caminhada.valor);
         setMetaSono(mostRecentMetas.sono.valor);
+      } else {
+        console.log('[DEBUG] listener metas onValue - sem metas', { uid: user.uid });
       }
     });
 
-    // Cleanup listener on unmount
     return () => {
-      unsubscribe();
+      unsubscribeContagens();
+      unsubscribeMetas();
     };
   }, [user]);
 
@@ -467,7 +596,7 @@ export default function Home({ route, navigation }) {
             </View>
           </View>
           <View style={styles.cardContent}>
-            <Text style={styles.valueText}>{contagemAgua} L</Text>
+            <Text style={styles.valueText}>{contagemAgua} ml</Text>
             <Text style={styles.targetText}>{metaAgua}</Text>
           </View>
           <View style={styles.progressBar}>
@@ -535,7 +664,7 @@ export default function Home({ route, navigation }) {
               <Text style={styles.modalTitle}>Adicionar Caminhada</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Minutos caminhados"
+                placeholder="Km caminhados"
                 placeholderTextColor="#666"
                 keyboardType="numeric"
                 value={novaQuantidadeCaminhada}
